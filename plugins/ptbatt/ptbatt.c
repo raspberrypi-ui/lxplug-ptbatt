@@ -32,7 +32,6 @@ typedef struct {
 
 /* Prototypes */
 
-#define GRAY_LEVEL      0.93
 
 
 /* gdk_pixbuf_get_from_surface function from GDK+3 */
@@ -263,39 +262,30 @@ void update_icon (PtBattPlugin *pt)
 	else w = (99 * capacity) / 400;
 	
 	if (status == CHARGING)
+	{
+		sprintf (str, "Charging : %d%%", capacity);
 		cairo_set_source_rgb (cr, 1, 1, 0);
-	else if (capacity <= 20)
-		cairo_set_source_rgb (cr, 1, 0, 0);
+	}
 	else if (status == EXT_POWER)
+	{
+		sprintf (str, "External power : %d%%", capacity);
 	    cairo_set_source_rgb (cr, 0.5, 0.5, 0.7);
+	}
 	else
-		cairo_set_source_rgb (cr, 0, 1, 0);
-	cairo_rectangle (cr, 5, 4, w, 12);
+	{
+		sprintf (str, "Discharging : %d%%", capacity);
+		if (capacity <= 20) cairo_set_source_rgb (cr, 1, 0, 0);
+		else cairo_set_source_rgb (cr, 0, 1, 0);
+	}
+	cairo_rectangle (cr, 5, 12, w, 12);
 	cairo_fill (cr);
 	
 	// empty the top end of the battery
 	if (w < 23)
 	{
 		cairo_set_source_rgb (cr, 1, 1, 1);
-		cairo_rectangle (cr, 5 + w, 4, 24 - w, 12);
+		cairo_rectangle (cr, 5 + w, 12, 24 - w, 12);
 		cairo_fill (cr);
-	}
-	
-	// display the capacity figure
-	cairo_set_source_rgb (cr, GRAY_LEVEL, GRAY_LEVEL, GRAY_LEVEL);
-	cairo_rectangle (cr, 0, 20, 35, 15);
-	cairo_fill (cr);  
-	cairo_set_source_rgb (cr, 0, 0, 0);
-	cairo_select_font_face (cr, "Dosis", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
-	cairo_set_font_size (cr, 12);
-	if (capacity >= 0) 
-	{
-		int x = 4;
-		if (capacity < 10) x += 4;
-		else if (capacity > 99) x -= 4;
-		cairo_move_to (cr, x, 33);
-		sprintf (str, "%2d%%", capacity);
-		cairo_show_text (cr, str);
 	}
 		
 	new_pixbuf = gdk_pixbuf_get_from_surface (surface, 0, 0, width, height);
@@ -342,8 +332,7 @@ static gboolean ptbatt_button_press_event (GtkWidget *widget, GdkEventButton *ev
 static void ptbatt_configuration_changed (LXPanel *panel, GtkWidget *p)
 {
     PtBattPlugin *pt = lxpanel_plugin_get_data (p);
-
-    //set_icon (panel, pt->tray_icon, "media-eject", 0);
+    update_icon (pt);
 }
 
 /* Plugin destructor. */
@@ -387,9 +376,10 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
     /* Allocate icon as a child of top level */
     gtk_container_add (GTK_CONTAINER(p), pt->tray_icon);
     
-    /* Show the widget, and return. */
+    /* Show the widget */
     gtk_widget_show_all (p);
 
+	/* Start timed events to monitor status */
 	pt->global_timeout_ref = g_timeout_add (5000, (GSourceFunc) timer_event, (gpointer) pt);
 
     return p;
