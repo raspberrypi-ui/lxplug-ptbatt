@@ -40,7 +40,6 @@ else
 fi
 
 pkg_modules="$pkg_modules \
-             gio-unix-2.0 \
              gthread-2.0 \
              gmodule-2.0"
 PKG_CHECK_MODULES(PACKAGE, [$pkg_modules])
@@ -103,7 +102,7 @@ fi
 AC_SUBST(ADDITIONAL_FLAGS)
 
 PACKAGE_CFLAGS="$PACKAGE_CFLAGS $MENU_CACHE_CFLAGS $ADDITIONAL_FLAGS"
-PACKAGE_LIBS="$PACKAGE_LIBS $MENU_CACHE_LIBS"
+PACKAGE_LIBS="$PACKAGE_LIBS $MENU_CACHE_LIBS -lwiringPi"
 
 dnl linker tweaking
 # The function of the link flag --as-needed is to prevent unnecesary linking.

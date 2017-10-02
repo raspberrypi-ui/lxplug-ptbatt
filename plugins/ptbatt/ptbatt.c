@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <glib/gi18n.h>
+#include <wiringPiI2C.h>
 
 #include "plugin.h"
 
@@ -26,7 +27,8 @@ typedef struct {
     LXPanel *panel;                 /* Back pointer to panel */
     GtkWidget *tray_icon;           /* Displayed image */
     config_setting_t *settings;     /* Plugin settings */
-	guint global_timeout_ref;
+    guint global_timeout_ref;
+    int i2c_handle;
 } PtBattPlugin;
 
 
@@ -214,95 +216,185 @@ gdk_pixbuf_get_from_surface  (cairo_surface_t *surface,
 
 
 
-
-
-
-#define DISCHARGING 0
-#define CHARGING 1
-#define EXT_POWER 2
-
-int charge_level (int *status)
+int i2cget (int handle, int address, int *data)
 {
-	static int charge = 100;
-	*status = DISCHARGING;
-	charge-=10;
-	return charge;
+    int res = wiringPiI2CReadReg16 (handle, address);
+    if (res < 0)
+        return -1;
+    else {
+        *data = res;
+        return 0;
+    }
+}
+
+
+#define MAX_COUNT       20                     // Maximum number of trials
+#define SLEEP_TIME      500                    // time between two i2cget in microsec
+
+#define STAT_UNKNOWN 0
+#define STAT_DISCHARGING 1
+#define STAT_CHARGING 2
+#define STAT_EXT_POWER 3
+
+int charge_level (PtBattPlugin *pt, int *status, int *tim)
+{
+    //static int charge = 100;
+    //*status = DISCHARGING;
+    //charge-=10;
+    //return charge;
+
+    int count, result, capacity, current, time;
+
+    // capacity
+    capacity = -1;
+    count = 0;
+    while ((capacity  <  0) && (count++ < MAX_COUNT))
+    {
+        result = i2cget (pt->i2c_handle, 0x0d, &capacity);
+        if (result == 0)
+        {
+            if ((capacity > 100) || (capacity < 0)) capacity = -1;
+        }
+        usleep (SLEEP_TIME);
+    }
+
+    // current
+    *status = STAT_UNKNOWN;
+    count = 0;
+    while ((*status == STAT_UNKNOWN) && (count++ < MAX_COUNT))
+    {
+        result = i2cget (pt->i2c_handle, 0x0a, &current);
+        if (result == 0)
+        {
+            if (current > 32767) current -= 65536;
+            if ((current > -5000) && (current < 5000) && (current != -1))
+            {
+                if (current < 0)
+                    *status = STAT_DISCHARGING;
+                else if (current > 0)
+                    *status = STAT_CHARGING;
+                else
+                    *status = STAT_EXT_POWER;
+            }
+            else current = -32767;
+        }
+        usleep (SLEEP_TIME);
+    }
+
+    // charging/discharging time
+    count = 0;
+    time = -1;
+    *tim = 0;
+    if (*status == STAT_CHARGING)
+    {
+        while ((time < 0) && (count++ < MAX_COUNT))
+        {
+            result = i2cget (pt->i2c_handle, 0x13, &time);
+            if (result == 0)
+            {
+                if ((time > 0) || (time < 1000)) *tim = time;
+            }
+            usleep (SLEEP_TIME);
+        }
+    }
+    else if (*status == STAT_DISCHARGING)
+    {
+        while ((time < 0) && (count++ < MAX_COUNT))
+        {
+            result = i2cget (pt->i2c_handle, 0x12, &time);
+            if (result == 0)
+            {
+                if ((time > 0) || (time < 1000)) *tim = time;
+            }
+            usleep (SLEEP_TIME);
+        }
+    }
+
+    return capacity;
 }
 
 
 void update_icon (PtBattPlugin *pt)
 {
-	GdkPixbuf *pixbuf, *new_pixbuf;
-	cairo_t *cr;
-	cairo_format_t format;
-	cairo_surface_t *surface;
-	int capacity, status, width, height, w;
-	char str[255];
-	
-	// read the charge status
-	capacity = charge_level (&status);
-	
-	// load the raw icon from PNG file
-	pixbuf = gdk_pixbuf_new_from_file ("/usr/share/lxpanel/images/battery_icon.png", NULL);
-	
-	// get the drawing surface
-	format = (gdk_pixbuf_get_has_alpha (pixbuf)) ? CAIRO_FORMAT_ARGB32 : CAIRO_FORMAT_RGB24;
-	width = gdk_pixbuf_get_width (pixbuf);
-	height = gdk_pixbuf_get_height (pixbuf);
-	surface = cairo_image_surface_create (format, width, height);
-	
-	// draw base icon on surface
-	cr = cairo_create (surface);     
-	gdk_cairo_set_source_pixbuf (cr, pixbuf, 0, 0);
-	cairo_paint (cr);
-	
-	// fill the battery symbol
-	if (capacity < 0) w = 0;
-	else if (capacity > 100) w = 24;
-	else w = (99 * capacity) / 400;
-	
-	if (status == CHARGING)
-	{
-		sprintf (str, "Charging : %d%%", capacity);
-		cairo_set_source_rgb (cr, 1, 1, 0);
-	}
-	else if (status == EXT_POWER)
-	{
-		sprintf (str, "External power : %d%%", capacity);
-	    cairo_set_source_rgb (cr, 0.5, 0.5, 0.7);
-	}
-	else
-	{
-		sprintf (str, "Discharging : %d%%", capacity);
-		if (capacity <= 20) cairo_set_source_rgb (cr, 1, 0, 0);
-		else cairo_set_source_rgb (cr, 0, 1, 0);
-	}
-	cairo_rectangle (cr, 5, 12, w, 12);
-	cairo_fill (cr);
-	
-	// empty the top end of the battery
-	if (w < 23)
-	{
-		cairo_set_source_rgb (cr, 1, 1, 1);
-		cairo_rectangle (cr, 5 + w, 12, 24 - w, 12);
-		cairo_fill (cr);
-	}
-		
-	new_pixbuf = gdk_pixbuf_get_from_surface (surface, 0, 0, width, height);
-	g_object_ref_sink (pt->tray_icon);
-	gtk_image_set_from_pixbuf (GTK_IMAGE (pt->tray_icon), new_pixbuf);	
-	cairo_destroy (cr);
-	
-	// set the tooltip
-	gtk_widget_set_tooltip_text (pt->tray_icon, str);
+    GdkPixbuf *pixbuf, *new_pixbuf;
+    cairo_t *cr;
+    cairo_format_t format;
+    cairo_surface_t *surface;
+    int capacity, status, width, height, w, time;
+    float ftime;
+    char str[255];
+
+    // read the charge status
+    capacity = charge_level (pt, &status, &time);
+    ftime = time / 60.0;
+
+    // load the raw icon from PNG file
+    pixbuf = gdk_pixbuf_new_from_file ("/usr/share/lxpanel/images/battery_icon.png", NULL);
+
+    // get the drawing surface
+    format = (gdk_pixbuf_get_has_alpha (pixbuf)) ? CAIRO_FORMAT_ARGB32 : CAIRO_FORMAT_RGB24;
+    width = gdk_pixbuf_get_width (pixbuf);
+    height = gdk_pixbuf_get_height (pixbuf);
+    surface = cairo_image_surface_create (format, width, height);
+
+    // draw base icon on surface
+    cr = cairo_create (surface);
+    gdk_cairo_set_source_pixbuf (cr, pixbuf, 0, 0);
+    cairo_paint (cr);
+
+    // fill the battery symbol
+    if (capacity < 0) w = 0;
+    else if (capacity > 100) w = 24;
+    else w = (99 * capacity) / 400;
+
+    if (status == STAT_CHARGING)
+    {
+        if (time < 90)
+            sprintf (str, "Charging : %d%%\nTime remaining = %d minutes", capacity, time);
+        else
+            sprintf (str, "Charging : %d%%\nTime remaining = %0.1f hours", capacity, ftime);
+        cairo_set_source_rgb (cr, 1, 1, 0);
+    }
+    else if (status == STAT_EXT_POWER)
+    {
+        sprintf (str, "External power : %d%%", capacity);
+        cairo_set_source_rgb (cr, 0.5, 0.5, 0.7);
+    }
+    else
+    {
+        if (time < 90)
+            sprintf (str, "Discharging : %d%%\nTime remaining = %d minutes", capacity, time);
+        else
+            sprintf (str, "Discharging : %d%%\nTime remaining = %0.1f hours", capacity, ftime);
+        if (capacity <= 20) cairo_set_source_rgb (cr, 1, 0, 0);
+        else cairo_set_source_rgb (cr, 0, 1, 0);
+    }
+    cairo_rectangle (cr, 5, 12, w, 12);
+    cairo_fill (cr);
+
+    // empty the top end of the battery
+    if (w < 23)
+    {
+        cairo_set_source_rgb (cr, 1, 1, 1);
+        cairo_rectangle (cr, 5 + w, 12, 24 - w, 12);
+        cairo_fill (cr);
+    }
+
+    new_pixbuf = gdk_pixbuf_get_from_surface (surface, 0, 0, width, height);
+    g_object_ref_sink (pt->tray_icon);
+    gtk_image_set_from_pixbuf (GTK_IMAGE (pt->tray_icon), new_pixbuf);  
+    cairo_destroy (cr);
+
+    // set the tooltip
+    gtk_widget_set_tooltip_text (pt->tray_icon, str);
 }
 
 static gboolean timer_event (PtBattPlugin *pt)
 {
-	g_source_remove(pt->global_timeout_ref);     // stop timer in case of tc_loop taking too long
-	update_icon (pt);
-	pt->global_timeout_ref = g_timeout_add (5000, (GSourceFunc) timer_event, (gpointer) pt);
-	return TRUE;
+    g_source_remove (pt->global_timeout_ref);
+    update_icon (pt);
+    pt->global_timeout_ref = g_timeout_add (5000, (GSourceFunc) timer_event, (gpointer) pt);
+    return TRUE;
 }
 
 
@@ -324,8 +416,8 @@ static gboolean ptbatt_button_press_event (GtkWidget *widget, GdkEventButton *ev
 #ifdef ENABLE_NLS
     textdomain ( GETTEXT_PACKAGE );
 #endif
-	
-	return FALSE;
+
+    return FALSE;
 }
 
 /* Handler for system config changed message from panel */
@@ -379,8 +471,9 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
     /* Show the widget */
     gtk_widget_show_all (p);
 
-	/* Start timed events to monitor status */
-	pt->global_timeout_ref = g_timeout_add (5000, (GSourceFunc) timer_event, (gpointer) pt);
+    /* Start timed events to monitor status */
+    pt->i2c_handle = wiringPiI2CSetup (0x0b);
+    pt->global_timeout_ref = g_timeout_add (5000, (GSourceFunc) timer_event, (gpointer) pt);
 
     return p;
 }
