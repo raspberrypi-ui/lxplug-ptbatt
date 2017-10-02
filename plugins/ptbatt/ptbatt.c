@@ -6,7 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <glib/gi18n.h>
+#ifdef __arm__
 #include <wiringPiI2C.h>
+#else
+#endif
 
 #include "plugin.h"
 
@@ -22,18 +25,16 @@
 /* Plug-in global data */
 
 typedef struct {
-
     GtkWidget *plugin;              /* Back pointer to the widget */
     LXPanel *panel;                 /* Back pointer to panel */
     GtkWidget *tray_icon;           /* Displayed image */
     config_setting_t *settings;     /* Plugin settings */
-    guint global_timeout_ref;
+    guint timer;
+#ifdef __arm__
     int i2c_handle;
+#else
+#endif
 } PtBattPlugin;
-
-
-/* Prototypes */
-
 
 
 /* gdk_pixbuf_get_from_surface function from GDK+3 */
@@ -213,9 +214,9 @@ gdk_pixbuf_get_from_surface  (cairo_surface_t *surface,
   return dest;
 }
 
+/* PiTop-specific functions */
 
-
-
+#ifdef __arm__
 int i2cget (int handle, int address, int *data)
 {
     int res = wiringPiI2CReadReg16 (handle, address);
@@ -226,6 +227,7 @@ int i2cget (int handle, int address, int *data)
         return 0;
     }
 }
+#endif
 
 
 #define MAX_COUNT       20                     // Maximum number of trials
@@ -243,6 +245,7 @@ int charge_level (PtBattPlugin *pt, int *status, int *tim)
     //charge-=10;
     //return charge;
 
+#ifdef __arm__
     int count, result, capacity, current, time;
 
     // capacity
@@ -311,6 +314,8 @@ int charge_level (PtBattPlugin *pt, int *status, int *tim)
     }
 
     return capacity;
+#else
+#endif
 }
 
 
@@ -391,10 +396,18 @@ void update_icon (PtBattPlugin *pt)
 
 static gboolean timer_event (PtBattPlugin *pt)
 {
-    g_source_remove (pt->global_timeout_ref);
+    g_source_remove (pt->timer);
     update_icon (pt);
-    pt->global_timeout_ref = g_timeout_add (5000, (GSourceFunc) timer_event, (gpointer) pt);
+    pt->timer = g_timeout_add (5000, (GSourceFunc) timer_event, (gpointer) pt);
     return TRUE;
+}
+
+static void init_measurements (PtBattPlugin *pt)
+{
+#ifdef __arm__
+    pt->i2c_handle = wiringPiI2CSetup (0x0b);
+#else
+#endif
 }
 
 
@@ -472,8 +485,8 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
     gtk_widget_show_all (p);
 
     /* Start timed events to monitor status */
-    pt->i2c_handle = wiringPiI2CSetup (0x0b);
-    pt->global_timeout_ref = g_timeout_add (5000, (GSourceFunc) timer_event, (gpointer) pt);
+    init_measurements (pt);
+    pt->timer = g_timeout_add (5000, (GSourceFunc) timer_event, (gpointer) pt);
 
     return p;
 }
