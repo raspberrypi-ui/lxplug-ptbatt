@@ -9,6 +9,7 @@
 #ifdef __arm__
 #include <wiringPiI2C.h>
 #else
+#include "batt_sys.h"
 #endif
 
 #include "plugin.h"
@@ -33,6 +34,7 @@ typedef struct {
 #ifdef __arm__
     int i2c_handle;
 #else
+    battery *batt;
 #endif
 } PtBattPlugin;
 
@@ -240,11 +242,6 @@ int i2cget (int handle, int address, int *data)
 
 int charge_level (PtBattPlugin *pt, int *status, int *tim)
 {
-    //static int charge = 100;
-    //*status = DISCHARGING;
-    //charge-=10;
-    //return charge;
-
 #ifdef __arm__
     int count, result, capacity, current, time;
 
@@ -315,6 +312,20 @@ int charge_level (PtBattPlugin *pt, int *status, int *tim)
 
     return capacity;
 #else
+    battery *b = pt->batt;
+    int mins;
+    if (b)
+    {
+        battery_update (b);
+        if (battery_is_charging (b))
+            *status = STAT_CHARGING;
+        else
+            *status = STAT_DISCHARGING;
+        mins = b->seconds;
+        mins /= 60;
+        *tim = mins;
+        return b->percentage;
+    }
 #endif
 }
 
@@ -407,6 +418,7 @@ static void init_measurements (PtBattPlugin *pt)
 #ifdef __arm__
     pt->i2c_handle = wiringPiI2CSetup (0x0b);
 #else
+    pt->batt = battery_get (0);
 #endif
 }
 
