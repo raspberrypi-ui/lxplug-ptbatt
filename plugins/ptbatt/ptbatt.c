@@ -351,22 +351,17 @@ void draw_icon (PtBattPlugin *pt, int lev, int r, int g, int b)
 
     // draw base icon on surface
     cairo_set_source_rgb (cr, 0.5, 0.5, 0.5);
-    cairo_rectangle (cr, 4, 11, 25, 14);
-    cairo_rectangle (cr, 29, 15, 2, 6);
+    cairo_rectangle (cr, 4, 11, 26, 14);
+    cairo_rectangle (cr, 30, 15, 2, 6);
     cairo_fill (cr);
 
     // fill the battery
+    cairo_set_source_rgb (cr, 1, 1, 1);
+    cairo_rectangle (cr, 5, 12, 24, 12);
+    cairo_fill (cr);
     cairo_set_source_rgb (cr, r, g, b);
     cairo_rectangle (cr, 5, 12, lev, 12);
     cairo_fill (cr);
-
-    // empty the top end of the battery
-    if (lev < 23)
-    {
-        cairo_set_source_rgb (cr, 1, 1, 1);
-        cairo_rectangle (cr, 5 + lev, 12, 23 - lev, 12);
-        cairo_fill (cr);
-    }
 
     new_pixbuf = gdk_pixbuf_get_from_surface (surface, 0, 0, 36, 36);
     g_object_ref_sink (pt->tray_icon);
