@@ -318,7 +318,12 @@ int charge_level (PtBattPlugin *pt, int *status, int *tim)
     {
         battery_update (b);
         if (battery_is_charging (b))
-            *status = STAT_CHARGING;
+        {
+            if (b->percentage >= 99 && b->seconds == 0)
+                *status = STAT_EXT_POWER;
+            else
+                *status = STAT_CHARGING;
+        }
         else
             *status = STAT_DISCHARGING;
         mins = b->seconds;
@@ -366,22 +371,22 @@ void update_icon (PtBattPlugin *pt)
     if (status == STAT_CHARGING)
     {
         if (time < 90)
-            sprintf (str, "Charging : %d%%\nTime remaining = %d minutes", capacity, time);
+            sprintf (str, _("Charging : %d%%\nTime remaining = %d minutes"), capacity, time);
         else
-            sprintf (str, "Charging : %d%%\nTime remaining = %0.1f hours", capacity, ftime);
+            sprintf (str, _("Charging : %d%%\nTime remaining = %0.1f hours"), capacity, ftime);
         cairo_set_source_rgb (cr, 1, 1, 0);
     }
     else if (status == STAT_EXT_POWER)
     {
-        sprintf (str, "External power : %d%%", capacity);
+        sprintf (str, _("Charged : %d%%\nOn external power"), capacity);
         cairo_set_source_rgb (cr, 0.5, 0.5, 0.7);
     }
     else
     {
         if (time < 90)
-            sprintf (str, "Discharging : %d%%\nTime remaining = %d minutes", capacity, time);
+            sprintf (str, _("Discharging : %d%%\nTime remaining = %d minutes"), capacity, time);
         else
-            sprintf (str, "Discharging : %d%%\nTime remaining = %0.1f hours", capacity, ftime);
+            sprintf (str, _("Discharging : %d%%\nTime remaining = %0.1f hours"), capacity, ftime);
         if (capacity <= 20) cairo_set_source_rgb (cr, 1, 0, 0);
         else cairo_set_source_rgb (cr, 0, 1, 0);
     }
@@ -476,8 +481,6 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
 #endif
 
     pt->tray_icon = gtk_image_new ();
-    //set_icon (panel, pt->tray_icon, "media-eject", 0);
-    gtk_widget_set_tooltip_text (pt->tray_icon, _("Select a drive in menu to eject safely"));
     gtk_widget_set_visible (pt->tray_icon, TRUE);
     update_icon (pt);
 
