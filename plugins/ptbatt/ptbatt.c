@@ -445,7 +445,9 @@ void update_icon (PtBattPlugin *pt)
 
     if (status == STAT_CHARGING)
     {
-        if (time < 90)
+        if (time <= 0)
+            sprintf (str, _("Charging : %d%%"), capacity);
+        else if (time < 90)
             sprintf (str, _("Charging : %d%%\nTime remaining = %d minutes"), capacity, time);
         else
             sprintf (str, _("Charging : %d%%\nTime remaining = %0.1f hours"), capacity, ftime);
@@ -457,7 +459,9 @@ void update_icon (PtBattPlugin *pt)
     }
     else
     {
-        if (time < 90)
+        if (time <= 0)
+            sprintf (str, _("Discharging : %d%%"), capacity);
+        else if (time < 90)
             sprintf (str, _("Discharging : %d%%\nTime remaining = %d minutes"), capacity, time);
         else
             sprintf (str, _("Discharging : %d%%\nTime remaining = %0.1f hours"), capacity, ftime);
