@@ -310,7 +310,7 @@ int charge_level (PtBattPlugin *pt, int *status, int *tim)
         }
     }
 
-    if (time == -1 || current == -1) *status = STAT_UNKNOWN;
+    if (time == -1 && current == -1) *status = STAT_UNKNOWN;
     return capacity;
 #else
     battery *b = pt->batt;
@@ -522,6 +522,12 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
 
 #ifdef __arm__
     pt->i2c_handle = wiringPiI2CSetup (0x0b);
+    int count = 0;
+    while (wiringPiI2CReadReg16 (pt->i2c_handle, 0x0d) < 0 && count++ < MAX_COUNT)
+    {
+        usleep (SLEEP_TIME);
+    }
+    if (count < MAX_COUNT) batt_found = 1;
 #else
     pt->batt = battery_get (0);
     if (pt->batt) batt_found = 1;
@@ -531,7 +537,6 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
 
     pt->tray_icon = gtk_image_new ();
     gtk_widget_set_visible (pt->tray_icon, TRUE);
-    update_icon (pt);
 
     /* Allocate top level widget and set into Plugin widget pointer. */
     pt->panel = panel;
