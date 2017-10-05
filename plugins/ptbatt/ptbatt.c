@@ -310,6 +310,7 @@ int charge_level (PtBattPlugin *pt, int *status, int *tim)
         }
     }
 
+    if (time == -1 || current == -1) *status = STAT_UNKNOWN;
     return capacity;
 #else
     battery *b = pt->batt;
@@ -420,6 +421,7 @@ void update_icon (PtBattPlugin *pt)
 
     // read the charge status
     capacity = charge_level (pt, &status, &time);
+    if (status == STAT_UNKNOWN) return;
     ftime = time / 60.0;
 
     // fill the battery symbol
