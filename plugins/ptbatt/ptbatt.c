@@ -320,7 +320,7 @@ int charge_level (PtBattPlugin *pt, int *status, int *tim)
         battery_update (b);
         if (battery_is_charging (b))
         {
-            if (strcasecmp (b->state, "full"))
+            if (strcasecmp (b->state, "full") == 0)
                 *status = STAT_EXT_POWER;
             else
                 *status = STAT_CHARGING;
