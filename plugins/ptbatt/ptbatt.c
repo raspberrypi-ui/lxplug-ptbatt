@@ -363,36 +363,36 @@ void draw_icon (PtBattPlugin *pt, int lev, int r, int g, int b, int powered)
     cairo_rectangle (cr, 5, 12, lev, 12);
     cairo_fill (cr);
 
-	if (powered)
-	{
-		cairo_set_source_rgb (cr, 0.3, 0.3, 0.3);
-		cairo_rectangle (cr, 20, 13, 4, 10);
-		cairo_rectangle (cr, 24, 15, 3, 2);
-		cairo_rectangle (cr, 24, 19, 3, 2);
-		cairo_rectangle (cr, 18, 14, 2, 8);
-		cairo_rectangle (cr, 17, 15, 1, 6);
-		cairo_rectangle (cr, 16, 16, 1, 4);
-		cairo_rectangle (cr, 6, 17, 2, 2);
-		cairo_rectangle (cr, 8, 16, 2, 2);
-		cairo_rectangle (cr, 10, 17, 2, 2);
-		cairo_rectangle (cr, 12, 18, 2, 2);
-		cairo_rectangle (cr, 14, 17, 2, 2);
-		cairo_fill (cr);
-		cairo_set_source_rgba (cr, 0.3, 0.3, 0.3, 0.25);
-		cairo_rectangle (cr, 17, 14, 1, 1);
-		cairo_rectangle (cr, 17, 21, 1, 1);
-		cairo_rectangle (cr, 19, 13, 1, 1);
-		cairo_rectangle (cr, 19, 22, 1, 1);
-		cairo_fill (cr);
-		cairo_set_source_rgba (cr, 0.3, 0.3, 0.3, 0.25);
-		cairo_rectangle (cr, 7, 16, 1, 1);
-		cairo_rectangle (cr, 8, 18, 2, 1);
-		cairo_rectangle (cr, 10, 16, 1, 1);
-		cairo_rectangle (cr, 11, 19, 1, 1);
-		cairo_rectangle (cr, 12, 17, 2, 1);
-		cairo_rectangle (cr, 14, 19, 1, 1);
-		cairo_fill (cr);
-	}
+    if (powered)
+    {
+        cairo_set_source_rgb (cr, 0.3, 0.3, 0.3);
+        cairo_rectangle (cr, 20, 13, 4, 10);
+        cairo_rectangle (cr, 24, 15, 3, 2);
+        cairo_rectangle (cr, 24, 19, 3, 2);
+        cairo_rectangle (cr, 18, 14, 2, 8);
+        cairo_rectangle (cr, 17, 15, 1, 6);
+        cairo_rectangle (cr, 16, 16, 1, 4);
+        cairo_rectangle (cr, 6, 17, 2, 2);
+        cairo_rectangle (cr, 8, 16, 2, 2);
+        cairo_rectangle (cr, 10, 17, 2, 2);
+        cairo_rectangle (cr, 12, 18, 2, 2);
+        cairo_rectangle (cr, 14, 17, 2, 2);
+        cairo_fill (cr);
+        cairo_set_source_rgba (cr, 0.3, 0.3, 0.3, 0.25);
+        cairo_rectangle (cr, 17, 14, 1, 1);
+        cairo_rectangle (cr, 17, 21, 1, 1);
+        cairo_rectangle (cr, 19, 13, 1, 1);
+        cairo_rectangle (cr, 19, 22, 1, 1);
+        cairo_fill (cr);
+        cairo_set_source_rgba (cr, 0.3, 0.3, 0.3, 0.25);
+        cairo_rectangle (cr, 7, 16, 1, 1);
+        cairo_rectangle (cr, 8, 18, 2, 1);
+        cairo_rectangle (cr, 10, 16, 1, 1);
+        cairo_rectangle (cr, 11, 19, 1, 1);
+        cairo_rectangle (cr, 12, 17, 2, 1);
+        cairo_rectangle (cr, 14, 19, 1, 1);
+        cairo_fill (cr);
+    }
 
     new_pixbuf = gdk_pixbuf_get_from_surface (surface, 0, 0, 36, 36);
     g_object_ref_sink (pt->tray_icon);
@@ -511,6 +511,7 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
     /* Allocate and initialize plugin context */
     PtBattPlugin *pt = g_new0 (PtBattPlugin, 1);
     GtkWidget *p;
+    int batt_found = 0;
     
 #ifdef ENABLE_NLS
     setlocale (LC_ALL, "");
@@ -518,6 +519,15 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
     bind_textdomain_codeset ( GETTEXT_PACKAGE, "UTF-8" );
     textdomain ( GETTEXT_PACKAGE );
 #endif
+
+#ifdef __arm__
+    pt->i2c_handle = wiringPiI2CSetup (0x0b);
+#else
+    pt->batt = battery_get (0);
+    if (pt->batt) batt_found = 1;
+#endif
+
+    if (!batt_found) return NULL;
 
     pt->tray_icon = gtk_image_new ();
     gtk_widget_set_visible (pt->tray_icon, TRUE);
@@ -534,15 +544,9 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
 
     /* Allocate icon as a child of top level */
     gtk_container_add (GTK_CONTAINER(p), pt->tray_icon);
-    
+
     /* Show the widget */
     gtk_widget_show_all (p);
-
-#ifdef __arm__
-    pt->i2c_handle = wiringPiI2CSetup (0x0b);
-#else
-    pt->batt = battery_get (0);
-#endif
 
     /* Start timed events to monitor status */
     g_timeout_add (5000, (GSourceFunc) timer_event, (gpointer) pt);
