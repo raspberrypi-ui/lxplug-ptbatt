@@ -7,6 +7,7 @@
 .dirstamp
 .DS_Store
 Makefile
+Makefile.in
 lxpanel
 lxpanelctl
 config.status
