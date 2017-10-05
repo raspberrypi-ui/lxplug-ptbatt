@@ -30,7 +30,6 @@ typedef struct {
     LXPanel *panel;                 /* Back pointer to panel */
     GtkWidget *tray_icon;           /* Displayed image */
     config_setting_t *settings;     /* Plugin settings */
-    guint timer;
     int c_pos, c_level;
 #ifdef __arm__
     int i2c_handle;
@@ -335,11 +334,11 @@ int charge_level (PtBattPlugin *pt, int *status, int *tim)
 #endif
 }
 
-void draw_icon (PtBattPlugin *pt, int lev, int r, int g, int b)
+void draw_icon (PtBattPlugin *pt, int lev, int r, int g, int b, int powered)
 {
     GdkPixbuf *new_pixbuf;
     cairo_t *cr;
-    cairo_format_t format;
+    //cairo_format_t format;
     cairo_surface_t *surface;
 
     // get and clear the drawing surface
@@ -363,6 +362,37 @@ void draw_icon (PtBattPlugin *pt, int lev, int r, int g, int b)
     cairo_rectangle (cr, 5, 12, lev, 12);
     cairo_fill (cr);
 
+	if (powered)
+	{
+		cairo_set_source_rgb (cr, 0.3, 0.3, 0.3);
+		cairo_rectangle (cr, 20, 13, 4, 10);
+		cairo_rectangle (cr, 24, 15, 3, 2);
+		cairo_rectangle (cr, 24, 19, 3, 2);
+		cairo_rectangle (cr, 18, 14, 2, 8);
+		cairo_rectangle (cr, 17, 15, 1, 6);
+		cairo_rectangle (cr, 16, 16, 1, 4);
+		cairo_rectangle (cr, 6, 17, 2, 2);
+		cairo_rectangle (cr, 8, 16, 2, 2);
+		cairo_rectangle (cr, 10, 17, 2, 2);
+		cairo_rectangle (cr, 12, 18, 2, 2);
+		cairo_rectangle (cr, 14, 17, 2, 2);
+		cairo_fill (cr);
+		cairo_set_source_rgba (cr, 0.3, 0.3, 0.3, 0.25);
+		cairo_rectangle (cr, 17, 14, 1, 1);
+		cairo_rectangle (cr, 17, 21, 1, 1);
+		cairo_rectangle (cr, 19, 13, 1, 1);
+		cairo_rectangle (cr, 19, 22, 1, 1);
+		cairo_fill (cr);
+		cairo_set_source_rgba (cr, 0.3, 0.3, 0.3, 0.25);
+		cairo_rectangle (cr, 7, 16, 1, 1);
+		cairo_rectangle (cr, 8, 18, 2, 1);
+		cairo_rectangle (cr, 10, 16, 1, 1);
+		cairo_rectangle (cr, 11, 19, 1, 1);
+		cairo_rectangle (cr, 12, 17, 2, 1);
+		cairo_rectangle (cr, 14, 19, 1, 1);
+		cairo_fill (cr);
+	}
+
     new_pixbuf = gdk_pixbuf_get_from_surface (surface, 0, 0, 36, 36);
     g_object_ref_sink (pt->tray_icon);
     gtk_image_set_from_pixbuf (GTK_IMAGE (pt->tray_icon), new_pixbuf);
@@ -375,7 +405,7 @@ static gboolean charge_anim (PtBattPlugin *pt)
     {
         if (pt->c_pos < pt->c_level) pt->c_pos++;
         else pt->c_pos = 1;
-        draw_icon (pt, pt->c_pos, 1, 1, 0);
+        draw_icon (pt, pt->c_pos, 1, 1, 0, 1);
         return TRUE;
     }
     else return FALSE;
@@ -421,7 +451,7 @@ void update_icon (PtBattPlugin *pt)
     else if (status == STAT_EXT_POWER)
     {
         sprintf (str, _("Charged : %d%%\nOn external power"), capacity);
-        draw_icon (pt, w, 0.5, 0.5, 0.7);
+        draw_icon (pt, w, 0, 1, 0, 1);
     }
     else
     {
@@ -429,8 +459,8 @@ void update_icon (PtBattPlugin *pt)
             sprintf (str, _("Discharging : %d%%\nTime remaining = %d minutes"), capacity, time);
         else
             sprintf (str, _("Discharging : %d%%\nTime remaining = %0.1f hours"), capacity, ftime);
-        if (capacity <= 20) draw_icon (pt, w, 1, 0, 0);
-        else draw_icon (pt, w, 0, 1, 0);
+        if (capacity <= 20) draw_icon (pt, w, 1, 0, 0, 0);
+        else draw_icon (pt, w, 0, 1, 0, 0);
     }
 
     // set the tooltip
@@ -443,25 +473,7 @@ static gboolean timer_event (PtBattPlugin *pt)
     return TRUE;
 }
 
-static void init_measurements (PtBattPlugin *pt)
-{
-#ifdef __arm__
-    pt->i2c_handle = wiringPiI2CSetup (0x0b);
-#else
-    pt->batt = battery_get (0);
-#endif
-}
-
-
 /* Plugin functions */
-
-static void ptbatt_popup_set_position (GtkMenu *menu, gint *px, gint *py, gboolean *push_in, gpointer data)
-{
-    PtBattPlugin *pt =  (PtBattPlugin *) data;
-    /* Determine the coordinates. */
-    lxpanel_plugin_popup_set_position_helper (pt->panel, pt->plugin, GTK_WIDGET(menu), px, py);
-    *push_in = TRUE;
-}
 
 /* Handler for menu button click */
 static gboolean ptbatt_button_press_event (GtkWidget *widget, GdkEventButton *event, LXPanel *panel)
@@ -524,9 +536,14 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
     /* Show the widget */
     gtk_widget_show_all (p);
 
+#ifdef __arm__
+    pt->i2c_handle = wiringPiI2CSetup (0x0b);
+#else
+    pt->batt = battery_get (0);
+#endif
+
     /* Start timed events to monitor status */
-    init_measurements (pt);
-    pt->timer = g_timeout_add (5000, (GSourceFunc) timer_event, (gpointer) pt);
+    g_timeout_add (5000, (GSourceFunc) timer_event, (gpointer) pt);
 
     return p;
 }
@@ -535,8 +552,8 @@ FM_DEFINE_MODULE(lxpanel_gtk, ptbatt)
 
 /* Plugin descriptor. */
 LXPanelPluginInit fm_module_init_lxpanel_gtk = {
-    .name = N_("PiTop Battery"),
-    .description = N_("Monitors PiTop battery"),
+    .name = N_("Battery (pi-top / laptop)"),
+    .description = N_("Monitors battery for pi-top and laptops"),
     .new_instance = ptbatt_constructor,
     .reconfigure = ptbatt_configuration_changed,
     .button_press_event = ptbatt_button_press_event,
