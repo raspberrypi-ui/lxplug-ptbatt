@@ -339,13 +339,13 @@ static void draw_icon (PtBattPlugin *pt, int lev, int r, int g, int b, int power
 
     if (powered)
     {
-        cairo_set_source_rgba (cr, 0.3, 0.3, 0.3, 0.25);
+        cairo_set_source_rgba (cr, 0.5, 0.5, 0.5, 0.5);
         cairo_rectangle (cr, 17, 14, 1, 8);
         cairo_rectangle (cr, 19, 13, 1, 10);
         cairo_rectangle (cr, 7, 16, 4, 3);
         cairo_rectangle (cr, 11, 17, 4, 3);
         cairo_fill (cr);
-        cairo_set_source_rgb (cr, 0.3, 0.3, 0.3);
+        cairo_set_source_rgb (cr, 0.5, 0.5, 0.5);
         cairo_rectangle (cr, 20, 13, 4, 10);
         cairo_rectangle (cr, 17, 15, 10, 2);
         cairo_rectangle (cr, 17, 19, 10, 2);
