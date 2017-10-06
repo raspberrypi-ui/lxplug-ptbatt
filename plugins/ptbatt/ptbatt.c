@@ -219,21 +219,19 @@ gdk_pixbuf_get_from_surface  (cairo_surface_t *surface,
 /* PiTop-specific functions */
 
 #ifdef __arm__
-int i2cget (int handle, int address, int *data)
+int i2cget (int handle, int address)
 {
-    int res = wiringPiI2CReadReg16 (handle, address);
-    if (res < 0)
-        return -1;
-    else {
-        *data = res;
-        return 0;
+    int count = 0;
+    while (count++ < 20)
+    {
+        int res = wiringPiI2CReadReg16 (handle, address);
+        if (res >= 0) return res;
+        usleep (500);
     }
+    return -1;
 }
 #endif
 
-
-#define MAX_COUNT       20                     // Maximum number of trials
-#define SLEEP_TIME      500                    // time between two i2cget in microsec
 
 #define STAT_UNKNOWN 0
 #define STAT_DISCHARGING 1
@@ -243,74 +241,35 @@ int i2cget (int handle, int address, int *data)
 int charge_level (PtBattPlugin *pt, int *status, int *tim)
 {
 #ifdef __arm__
-    int count, result, capacity, current, time;
+    int capacity, current, time;
 
     // capacity
-    capacity = -1;
-    count = 0;
-    while ((capacity  <  0) && (count++ < MAX_COUNT))
-    {
-        result = i2cget (pt->i2c_handle, 0x0d, &capacity);
-        if (result == 0)
-        {
-            if ((capacity > 100) || (capacity < 0)) capacity = -1;
-        }
-        usleep (SLEEP_TIME);
-    }
+    capacity = i2cget (pt->i2c_handle, 0x0d);
+    if (capacity > 100) capacity = -1;
 
     // current
     *status = STAT_UNKNOWN;
-    count = 0;
-    while ((*status == STAT_UNKNOWN) && (count++ < MAX_COUNT))
+    current = i2cget (pt->i2c_handle, 0x0a);
+    if (current != -1)
     {
-        result = i2cget (pt->i2c_handle, 0x0a, &current);
-        if (result == 0)
+        if (current > 32767) current -= 65536;
+        if (current > -5000 && current < 5000)
         {
-            if (current > 32767) current -= 65536;
-            if ((current > -5000) && (current < 5000) && (current != -1))
-            {
-                if (current < 0)
-                    *status = STAT_DISCHARGING;
-                else if (current > 0)
-                    *status = STAT_CHARGING;
-                else
-                    *status = STAT_EXT_POWER;
-            }
-            else current = -32767;
+            if (current < 0) *status = STAT_DISCHARGING;
+            else if (current > 0) *status = STAT_CHARGING;
+            else *status = STAT_EXT_POWER;
         }
-        usleep (SLEEP_TIME);
     }
 
     // charging/discharging time
-    count = 0;
-    time = -1;
     *tim = 0;
     if (*status == STAT_CHARGING)
-    {
-        while ((time < 0) && (count++ < MAX_COUNT))
-        {
-            result = i2cget (pt->i2c_handle, 0x13, &time);
-            if (result == 0)
-            {
-                if ((time > 0) || (time < 1000)) *tim = time;
-            }
-            usleep (SLEEP_TIME);
-        }
-    }
+        time = i2cget (pt->i2c_handle, 0x13);
     else if (*status == STAT_DISCHARGING)
-    {
-        while ((time < 0) && (count++ < MAX_COUNT))
-        {
-            result = i2cget (pt->i2c_handle, 0x12, &time);
-            if (result == 0)
-            {
-                if ((time > 0) || (time < 1000)) *tim = time;
-            }
-            usleep (SLEEP_TIME);
-        }
-    }
+        time = i2cget (pt->i2c_handle, 0x12);
+    if (time == -1) *status = STAT_UNKNOWN;
+    else if (time < 1000) *tim = time;
 
-    if (time == -1 && current == -1) *status = STAT_UNKNOWN;
     return capacity;
 #else
     battery *b = pt->batt;
@@ -516,12 +475,7 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
 
 #ifdef __arm__
     pt->i2c_handle = wiringPiI2CSetup (0x0b);
-    int count = 0;
-    while (wiringPiI2CReadReg16 (pt->i2c_handle, 0x0d) < 0 && count++ < MAX_COUNT)
-    {
-        usleep (SLEEP_TIME);
-    }
-    if (count < MAX_COUNT) batt_found = 1;
+    if (i2cget (pt->i2c_handle, 0x0d) > 0) batt_found = 1;
 #else
     pt->batt = battery_get (0);
     if (pt->batt) batt_found = 1;
