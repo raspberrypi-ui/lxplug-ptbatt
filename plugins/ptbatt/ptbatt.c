@@ -14,15 +14,6 @@
 
 #include "plugin.h"
 
-#define ICON_BUTTON_TRIM 4
-
-//#define DEBUG_ON
-#ifdef DEBUG_ON
-#define DEBUG(fmt,args...) g_message("ptb: " fmt,##args)
-#else
-#define DEBUG
-#endif
-
 /* Plug-in global data */
 
 typedef struct {
@@ -30,13 +21,24 @@ typedef struct {
     LXPanel *panel;                 /* Back pointer to panel */
     GtkWidget *tray_icon;           /* Displayed image */
     config_setting_t *settings;     /* Plugin settings */
-    int c_pos, c_level;
+    int c_pos;                      /* Used for charging animation */
+    int c_level;                    /* Used for charging animation */
 #ifdef __arm__
     int i2c_handle;
 #else
     battery *batt;
 #endif
 } PtBattPlugin;
+
+/* Battery states */
+
+typedef enum
+{
+    STAT_UNKNOWN,
+    STAT_DISCHARGING,
+    STAT_CHARGING,
+    STAT_EXT_POWER
+} status_t;
 
 
 /* gdk_pixbuf_get_from_surface function from GDK+3 */
@@ -219,7 +221,7 @@ gdk_pixbuf_get_from_surface  (cairo_surface_t *surface,
 /* PiTop-specific functions */
 
 #ifdef __arm__
-int i2cget (int handle, int address)
+static int i2cget (int handle, int address)
 {
     int count = 0;
     while (count++ < 20)
@@ -233,12 +235,24 @@ int i2cget (int handle, int address)
 #endif
 
 
-#define STAT_UNKNOWN 0
-#define STAT_DISCHARGING 1
-#define STAT_CHARGING 2
-#define STAT_EXT_POWER 3
+/* Initialise measurements and check for a battery */
 
-int charge_level (PtBattPlugin *pt, int *status, int *tim)
+static int init_measurement (PtBattPlugin *pt)
+{
+#ifdef __arm__
+    pt->i2c_handle = wiringPiI2CSetup (0x0b);
+    if (i2cget (pt->i2c_handle, 0x0d) > 0) return 1;
+#else
+    pt->batt = battery_get (0);
+    if (pt->batt) return 1;
+#endif
+	return 0;
+}
+
+
+/* Read current capacity, status and time remaining from battery */
+
+static int charge_level (PtBattPlugin *pt, status_t *status, int *tim)
 {
 #ifdef __arm__
     int capacity, current, time;
@@ -267,6 +281,7 @@ int charge_level (PtBattPlugin *pt, int *status, int *tim)
         time = i2cget (pt->i2c_handle, 0x13);
     else if (*status == STAT_DISCHARGING)
         time = i2cget (pt->i2c_handle, 0x12);
+    else time = 0;
     if (time == -1) *status = STAT_UNKNOWN;
     else if (time < 1000) *tim = time;
 
@@ -279,22 +294,28 @@ int charge_level (PtBattPlugin *pt, int *status, int *tim)
         battery_update (b);
         if (battery_is_charging (b))
         {
-            if (strcasecmp (b->state, "full") == 0)
-                *status = STAT_EXT_POWER;
-            else
-                *status = STAT_CHARGING;
+            if (strcasecmp (b->state, "full") == 0) *status = STAT_EXT_POWER;
+            else *status = STAT_CHARGING;
         }
-        else
-            *status = STAT_DISCHARGING;
+        else *status = STAT_DISCHARGING;
         mins = b->seconds;
         mins /= 60;
         *tim = mins;
         return b->percentage;
     }
+    else
+    {
+        *status = STAT_UNKNOWN;
+        *tim = 0;
+        return 0;
+    }
 #endif
 }
 
-void draw_icon (PtBattPlugin *pt, int lev, int r, int g, int b, int powered)
+
+/* Draw the icon in relevant colour and fill level */
+
+static void draw_icon (PtBattPlugin *pt, int lev, int r, int g, int b, int powered)
 {
     GdkPixbuf *new_pixbuf;
     cairo_t *cr;
@@ -341,6 +362,7 @@ void draw_icon (PtBattPlugin *pt, int lev, int r, int g, int b, int powered)
         cairo_rectangle (cr, 12, 18, 2, 2);
         cairo_rectangle (cr, 14, 17, 4, 2);
         cairo_fill (cr);
+        // can you tell what it is yet?
     }
 
     new_pixbuf = gdk_pixbuf_get_from_surface (surface, 0, 0, 36, 36);
@@ -348,6 +370,9 @@ void draw_icon (PtBattPlugin *pt, int lev, int r, int g, int b, int powered)
     gtk_image_set_from_pixbuf (GTK_IMAGE (pt->tray_icon), new_pixbuf);
     cairo_destroy (cr);
 }
+
+
+/* Update the "filling" animation while charging */
 
 static gboolean charge_anim (PtBattPlugin *pt)
 {
@@ -362,9 +387,12 @@ static gboolean charge_anim (PtBattPlugin *pt)
 }
 
 
-void update_icon (PtBattPlugin *pt)
+/* Read the current charge state and update the icon accordingly */
+
+static void update_icon (PtBattPlugin *pt)
 {
-    int capacity, status, w, time;
+    int capacity, w, time;
+    status_t status;
     float ftime;
     char str[255];
 
@@ -464,7 +492,6 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
     /* Allocate and initialize plugin context */
     PtBattPlugin *pt = g_new0 (PtBattPlugin, 1);
     GtkWidget *p;
-    int batt_found = 0;
     
 #ifdef ENABLE_NLS
     setlocale (LC_ALL, "");
@@ -473,15 +500,8 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
     textdomain ( GETTEXT_PACKAGE );
 #endif
 
-#ifdef __arm__
-    pt->i2c_handle = wiringPiI2CSetup (0x0b);
-    if (i2cget (pt->i2c_handle, 0x0d) > 0) batt_found = 1;
-#else
-    pt->batt = battery_get (0);
-    if (pt->batt) batt_found = 1;
-#endif
-
-    if (!batt_found) return NULL;
+    /* Initialise measurements and check for a battery */
+    if (!init_measurement (pt)) return NULL;
 
     pt->tray_icon = gtk_image_new ();
     gtk_widget_set_visible (pt->tray_icon, TRUE);
