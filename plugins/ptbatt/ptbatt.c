@@ -244,7 +244,7 @@ static int init_measurement (PtBattPlugin *pt)
     if (fp == NULL) return 0;
     else fclose (fp);
     pt->i2c_handle = wiringPiI2CSetup (0x0b);
-    if (pt->i2c_handle) return 0;
+    if (pt->i2c_handle == NULL) return 0;
     if (i2cget (pt->i2c_handle, 0x0d) > 0) return 1;
 #else
     pt->batt = battery_get (0);
