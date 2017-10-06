@@ -254,6 +254,8 @@ static int init_measurement (PtBattPlugin *pt)
 
 static int charge_level (PtBattPlugin *pt, status_t *status, int *tim)
 {
+    *status = STAT_UNKNOWN;
+    *tim = 0;
 #ifdef __arm__
     int capacity, current, time;
 
@@ -262,7 +264,6 @@ static int charge_level (PtBattPlugin *pt, status_t *status, int *tim)
     if (capacity > 100) capacity = -1;
 
     // current
-    *status = STAT_UNKNOWN;
     current = i2cget (pt->i2c_handle, 0x0a);
     if (current != -1)
     {
@@ -276,7 +277,6 @@ static int charge_level (PtBattPlugin *pt, status_t *status, int *tim)
     }
 
     // charging/discharging time
-    *tim = 0;
     if (*status == STAT_CHARGING)
         time = i2cget (pt->i2c_handle, 0x13);
     else if (*status == STAT_DISCHARGING)
@@ -303,12 +303,7 @@ static int charge_level (PtBattPlugin *pt, status_t *status, int *tim)
         *tim = mins;
         return b->percentage;
     }
-    else
-    {
-        *status = STAT_UNKNOWN;
-        *tim = 0;
-        return 0;
-    }
+    else return -1;
 #endif
 }
 
