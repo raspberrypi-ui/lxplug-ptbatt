@@ -240,7 +240,11 @@ static int i2cget (int handle, int address)
 static int init_measurement (PtBattPlugin *pt)
 {
 #ifdef __arm__
+    FILE *fp = fopen ("/dev/i2c-1", "rb");
+    if (fp == NULL) return 0;
+    else fclose (fp);
     pt->i2c_handle = wiringPiI2CSetup (0x0b);
+    if (pt->i2c_handle) return 0;
     if (i2cget (pt->i2c_handle, 0x0d) > 0) return 1;
 #else
     pt->batt = battery_get (0);
