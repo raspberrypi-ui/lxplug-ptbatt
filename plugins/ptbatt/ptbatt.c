@@ -228,7 +228,7 @@ static int i2cget (int handle, int address)
     {
         int res = wiringPiI2CReadReg16 (handle, address);
         if (res >= 0) return res;
-        usleep (500);
+        usleep (1000);
     }
     return -1;
 }
