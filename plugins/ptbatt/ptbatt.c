@@ -246,7 +246,7 @@ static int init_measurement (PtBattPlugin *pt)
     pt->batt = battery_get (0);
     if (pt->batt) return 1;
 #endif
-	return 0;
+    return 0;
 }
 
 
