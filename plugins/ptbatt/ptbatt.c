@@ -180,7 +180,7 @@ static int charge_level (PtBattPlugin *pt, status_t *status, int *tim)
 
 /* Draw the icon in relevant colour and fill level */
 
-static void draw_icon (PtBattPlugin *pt, int lev, int r, int g, int b, int powered)
+static void draw_icon (PtBattPlugin *pt, int lev, float r, float g, float b, int powered)
 {
     GdkPixbuf *new_pixbuf;
     cairo_t *cr;
@@ -248,7 +248,7 @@ static gboolean charge_anim (PtBattPlugin *pt)
     {
         if (pt->c_pos < pt->c_level) pt->c_pos++;
         else pt->c_pos = 1;
-        draw_icon (pt, pt->c_pos, 1, 1, 0, 1);
+        draw_icon (pt, pt->c_pos, 1, 0.75, 0, 1);
         return TRUE;
     }
     else return FALSE;
