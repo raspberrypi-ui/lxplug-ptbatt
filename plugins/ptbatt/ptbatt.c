@@ -113,7 +113,11 @@ static int init_measurement (PtBattPlugin *pt)
     if (!pt->i2c_handle) return 0;
     if (i2cget (pt->i2c_handle, 0x0d) > 0) return 1;
 #else
-    pt->batt = battery_get (0);
+    int val;
+    if (config_setting_lookup_int (pt->settings, "BattNum", &val))
+        pt->batt = battery_get (val);
+    else
+        pt->batt = battery_get (0);
     if (pt->batt) return 1;
 #endif
     return 0;
@@ -360,6 +364,8 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
     /* Allocate and initialize plugin context */
     PtBattPlugin *pt = g_new0 (PtBattPlugin, 1);
     GtkWidget *p;
+
+    pt->settings = settings;
     
 #ifdef ENABLE_NLS
     setlocale (LC_ALL, "");
