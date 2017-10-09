@@ -162,7 +162,7 @@ static void draw_icon (PtBattPlugin *pt, int lev, float r, float g, float b, int
     cairo_set_source_rgb (cr, 1, 1, 1);
     cairo_rectangle (cr, 5, 12, 24, 12);
     cairo_fill (cr);
-    cairo_set_source_rgb (cr, r, g, b);
+    cairo_set_source_rgb (cr, b, g, r);
     cairo_rectangle (cr, 5, 12, lev, 12);
     cairo_fill (cr);
 
