@@ -4,13 +4,13 @@
 #include <errno.h>
 #include <locale.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include <glib/gi18n.h>
-#ifdef __arm__
-#include <wiringPiI2C.h>
-#else
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <asm/ioctl.h>
 #include "batt_sys.h"
-#endif
 
 #include "plugin.h"
 
@@ -23,11 +23,8 @@ typedef struct {
     config_setting_t *settings;     /* Plugin settings */
     int c_pos;                      /* Used for charging animation */
     int c_level;                    /* Used for charging animation */
-#ifdef __arm__
     int i2c_handle;
-#else
     battery *batt;
-#endif
 } PtBattPlugin;
 
 /* Battery states */
@@ -41,20 +38,73 @@ typedef enum
 } status_t;
 
 
-/* PiTop-specific functions */
+/* i2c support for pi-top */
 
 #ifdef __arm__
+
+union i2c_smbus_data
+{
+  uint8_t  byte;
+  uint16_t word;
+  uint8_t  block [34];
+};
+
+struct i2c_smbus_ioctl_data
+{
+  char read_write;
+  uint8_t command;
+  int size;
+  union i2c_smbus_data *data;
+};
+
+static int i2chandle (void)
+{
+    FILE *fp;
+    int fd;
+
+    fp = fopen ("/dev/i2c-1", "rb");
+    if (fp)
+    {
+        fclose (fp);
+        fd = open ("/dev/i2c-1", O_RDWR);
+        if (fd >= 0)
+        {
+            if (ioctl (fd, 0x0703, 0x0b) >= 0) return fd;
+        }
+    }
+
+    fp = fopen ("/dev/i2c-0", "rb");
+    if (fp)
+    {
+        fclose (fp);
+        fd = open ("/dev/i2c-1", O_RDWR);
+        if (fd >= 0)
+        {
+            if (ioctl (fd, 0x0703, 0x0b) >= 0) return fd;
+        }
+    }
+    return 0;
+}
+
 static int i2cget (int handle, int address)
 {
+    struct i2c_smbus_ioctl_data args;
+    union i2c_smbus_data data;
+
     int count = 0;
     while (count++ < 20)
     {
-        int res = wiringPiI2CReadReg16 (handle, address);
-        if (res >= 0) return res;
+        args.read_write = 1;
+        args.command = address;
+        args.size = 3;
+        args.data = &data;
+        if (!ioctl (handle, 0x0720, &args))
+             return data.word & 0xFFFF;
         usleep (1000);
     }
     return -1;
 }
+
 #endif
 
 
@@ -63,20 +113,23 @@ static int i2cget (int handle, int address)
 static int init_measurement (PtBattPlugin *pt)
 {
 #ifdef __arm__
-    FILE *fp = fopen ("/dev/i2c-1", "rb");
-    if (fp == NULL) return 0;
-    else fclose (fp);
-    pt->i2c_handle = wiringPiI2CSetup (0x0b);
-    if (!pt->i2c_handle) return 0;
-    if (i2cget (pt->i2c_handle, 0x0d) > 0) return 1;
-#else
+    pt->i2c_handle = i2chandle ();
+    if (pt->i2c_handle)
+    {
+        // i2c available - look for a battery
+        if (i2cget (pt->i2c_handle, 0x0d) > 0) return 1;
+
+        // if none found, remove the handle
+        pt->i2c_handle = 0;
+    }
+#endif
     int val;
     if (config_setting_lookup_int (pt->settings, "BattNum", &val))
         pt->batt = battery_get (val);
     else
         pt->batt = battery_get (0);
     if (pt->batt) return 1;
-#endif
+
     return 0;
 }
 
@@ -88,36 +141,39 @@ static int charge_level (PtBattPlugin *pt, status_t *status, int *tim)
     *status = STAT_UNKNOWN;
     *tim = 0;
 #ifdef __arm__
-    int capacity, current, time;
-
-    // capacity
-    capacity = i2cget (pt->i2c_handle, 0x0d);
-    if (capacity > 100) capacity = -1;
-
-    // current
-    current = i2cget (pt->i2c_handle, 0x0a);
-    if (current != -1)
+    if (pt->i2c_handle)
     {
-        if (current > 32767) current -= 65536;
-        if (current > -5000 && current < 5000)
+        int capacity, current, time;
+
+        // capacity
+        capacity = i2cget (pt->i2c_handle, 0x0d);
+        if (capacity > 100) capacity = -1;
+
+        // current
+        current = i2cget (pt->i2c_handle, 0x0a);
+        if (current != -1)
         {
-            if (current < 0) *status = STAT_DISCHARGING;
-            else if (current > 0) *status = STAT_CHARGING;
-            else *status = STAT_EXT_POWER;
+            if (current > 32767) current -= 65536;
+            if (current > -5000 && current < 5000)
+            {
+                if (current < 0) *status = STAT_DISCHARGING;
+                else if (current > 0) *status = STAT_CHARGING;
+                else *status = STAT_EXT_POWER;
+            }
         }
+
+        // charging/discharging time
+        if (*status == STAT_CHARGING)
+            time = i2cget (pt->i2c_handle, 0x13);
+        else if (*status == STAT_DISCHARGING)
+            time = i2cget (pt->i2c_handle, 0x12);
+        else time = 0;
+        if (time == -1) *status = STAT_UNKNOWN;
+        else if (time < 1000) *tim = time;
+
+        return capacity;
     }
-
-    // charging/discharging time
-    if (*status == STAT_CHARGING)
-        time = i2cget (pt->i2c_handle, 0x13);
-    else if (*status == STAT_DISCHARGING)
-        time = i2cget (pt->i2c_handle, 0x12);
-    else time = 0;
-    if (time == -1) *status = STAT_UNKNOWN;
-    else if (time < 1000) *tim = time;
-
-    return capacity;
-#else
+#endif
     battery *b = pt->batt;
     int mins;
     if (b)
@@ -135,7 +191,6 @@ static int charge_level (PtBattPlugin *pt, status_t *status, int *tim)
         return b->percentage;
     }
     else return -1;
-#endif
 }
 
 
@@ -333,6 +388,7 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
 #endif
 
     /* Initialise measurements and check for a battery */
+    pt->i2c_handle = 0;
     if (!init_measurement (pt)) return NULL;
 
     pt->tray_icon = gtk_image_new ();

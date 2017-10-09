@@ -3,7 +3,6 @@ AC_INIT(lxplug_ptbatt, 0.1, http://raspberrypi.org/)
 AM_INIT_AUTOMAKE([-Wall foreign subdir-objects no-dist-gzip dist-xz])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
-AC_CANONICAL_HOST
 
 # Support silent build rules. Disable by either passing --disable-silent-rules
 # to configure or passing V=1 to make
@@ -104,16 +103,6 @@ AC_SUBST(ADDITIONAL_FLAGS)
 
 PACKAGE_CFLAGS="$PACKAGE_CFLAGS $MENU_CACHE_CFLAGS $ADDITIONAL_FLAGS"
 PACKAGE_LIBS="$PACKAGE_LIBS $MENU_CACHE_LIBS"
-
-case "$host_cpu" in
-	*arm*)
-		PACKAGE_CFLAGS="$PACKAGE_CFLAGS -lwiringPi"
-		;;
-	*)
-		PTBATT_SYSTEM='ptbatt/ptbatt_la-batt_sys.lo'
-		;;
-esac
-AC_SUBST([PTBATT_SYSTEM])
 
 dnl linker tweaking
 # The function of the link flag --as-needed is to prevent unnecesary linking.

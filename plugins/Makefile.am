@@ -15,13 +15,8 @@ pkglibdir = $(libdir)/lxpanel/plugins
 
 # ptbatt
 ptbatt_la_SOURCES = \
-	ptbatt/ptbatt.c
-
-EXTRA_ptbatt_la_SOURCES = \
+	ptbatt/ptbatt.c \
 	ptbatt/batt_sys.c
-
-ptbatt_la_LIBADD = $(PTBATT_SYSTEM)
-ptbatt_la_DEPENDENCIES = $(PTBATT_SYSTEM)
 
 ptbatt_la_CFLAGS = \
 	-I$(top_srcdir) \
