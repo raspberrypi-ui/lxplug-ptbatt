@@ -23,8 +23,10 @@ typedef struct {
     config_setting_t *settings;     /* Plugin settings */
     int c_pos;                      /* Used for charging animation */
     int c_level;                    /* Used for charging animation */
-    int i2c_handle;
     battery *batt;
+#ifdef __arm__
+    int i2c_handle;
+#endif
 } PtBattPlugin;
 
 /* Battery states */
@@ -379,7 +381,6 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
 #endif
 
     /* Initialise measurements and check for a battery */
-    pt->i2c_handle = 0;
     if (!init_measurement (pt)) return NULL;
 
     pt->tray_icon = gtk_image_new ();
