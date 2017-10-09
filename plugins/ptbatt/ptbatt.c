@@ -42,21 +42,6 @@ typedef enum
 
 #ifdef __arm__
 
-union i2c_smbus_data
-{
-  uint8_t  byte;
-  uint16_t word;
-  uint8_t  block [34];
-};
-
-struct i2c_smbus_ioctl_data
-{
-  char read_write;
-  uint8_t command;
-  int size;
-  union i2c_smbus_data *data;
-};
-
 static int i2chandle (void)
 {
     FILE *fp;
@@ -88,8 +73,14 @@ static int i2chandle (void)
 
 static int i2cget (int handle, int address)
 {
-    struct i2c_smbus_ioctl_data args;
-    union i2c_smbus_data data;
+    struct i2c_smbus_ioctl_data
+    {
+        char read_write;
+        uint8_t command;
+        int size;
+        uint16_t *data;
+    } args;
+    uint16_t data;
 
     int count = 0;
     while (count++ < 20)
@@ -99,7 +90,7 @@ static int i2cget (int handle, int address)
         args.size = 3;
         args.data = &data;
         if (!ioctl (handle, 0x0720, &args))
-             return data.word & 0xFFFF;
+             return data & 0xFFFF;
         usleep (1000);
     }
     return -1;
