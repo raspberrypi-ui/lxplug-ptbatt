@@ -14,6 +14,9 @@
 
 #include "plugin.h"
 
+//#define TEST_MODE
+//#define CHARGE_ANIM
+
 /* Plug-in global data */
 
 typedef struct {
@@ -21,8 +24,10 @@ typedef struct {
     LXPanel *panel;                 /* Back pointer to panel */
     GtkWidget *tray_icon;           /* Displayed image */
     config_setting_t *settings;     /* Plugin settings */
+#ifdef CHARGE_ANIM
     int c_pos;                      /* Used for charging animation */
     int c_level;                    /* Used for charging animation */
+#endif
     battery *batt;
     GdkPixbuf *plug;
     GdkPixbuf *flash;
@@ -107,6 +112,9 @@ static int i2cget (int handle, int address)
 
 static int init_measurement (PtBattPlugin *pt)
 {
+#ifdef TEST_MODE
+    return 1;
+#endif
 #ifdef __arm__
     pt->i2c_handle = i2chandle ();
     if (pt->i2c_handle)
@@ -133,6 +141,11 @@ static int init_measurement (PtBattPlugin *pt)
 
 static int charge_level (PtBattPlugin *pt, status_t *status, int *tim)
 {
+#ifdef TEST_MODE
+    *status = STAT_CHARGING;
+    *tim = 30;
+    return 50;
+#endif
     *status = STAT_UNKNOWN;
     *tim = 0;
 #ifdef __arm__
@@ -247,7 +260,7 @@ static void draw_icon (PtBattPlugin *pt, int lev, float r, float g, float b, int
 
 
 /* Update the "filling" animation while charging */
-
+#ifdef CHARGE_ANIM
 static gboolean charge_anim (PtBattPlugin *pt)
 {
     if (pt->c_pos)
@@ -259,7 +272,7 @@ static gboolean charge_anim (PtBattPlugin *pt)
     }
     else return FALSE;
 }
-
+#endif
 
 /* Read the current charge state and update the icon accordingly */
 
@@ -280,6 +293,7 @@ static void update_icon (PtBattPlugin *pt)
     else if (capacity > 100) w = 24;
     else w = (99 * capacity) / 400;
 
+#ifdef CHARGE_ANIM
     if (status == STAT_CHARGING)
     {
         if (pt->c_pos == 0)
@@ -293,6 +307,7 @@ static void update_icon (PtBattPlugin *pt)
     {
         if (pt->c_pos != 0) pt->c_pos = 0;
     }
+#endif
 
     if (status == STAT_CHARGING)
     {
@@ -302,6 +317,9 @@ static void update_icon (PtBattPlugin *pt)
             sprintf (str, _("Charging : %d%%\nTime remaining = %d minutes"), capacity, time);
         else
             sprintf (str, _("Charging : %d%%\nTime remaining = %0.1f hours"), capacity, ftime);
+#ifndef CHARGE_ANIM
+        draw_icon (pt, w, 1, 0.75, 0, 1);
+#endif
     }
     else if (status == STAT_EXT_POWER)
     {
