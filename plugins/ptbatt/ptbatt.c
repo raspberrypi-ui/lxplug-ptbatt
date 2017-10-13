@@ -24,6 +24,8 @@ typedef struct {
     int c_pos;                      /* Used for charging animation */
     int c_level;                    /* Used for charging animation */
     battery *batt;
+    GdkPixbuf *plug;
+    GdkPixbuf *flash;
 #ifdef __arm__
     int i2c_handle;
 #endif
@@ -201,9 +203,14 @@ static void draw_icon (PtBattPlugin *pt, int lev, float r, float g, float b, int
     cairo_fill (cr);
 
     // draw base icon on surface
-    cairo_set_source_rgb (cr, 0.5, 0.5, 0.5);
+    cairo_set_source_rgb (cr, b, g, r);
+
     cairo_rectangle (cr, 4, 11, 26, 14);
-    cairo_rectangle (cr, 30, 15, 2, 6);
+    cairo_rectangle (cr, 5, 10, 24, 1);
+    cairo_rectangle (cr, 5, 25, 24, 1);
+    cairo_rectangle (cr, 3, 12, 1, 12);
+    cairo_rectangle (cr, 30, 12, 1, 12);
+    cairo_rectangle (cr, 31, 15, 2, 6);
     cairo_fill (cr);
 
     // fill the battery
@@ -214,27 +221,16 @@ static void draw_icon (PtBattPlugin *pt, int lev, float r, float g, float b, int
     cairo_rectangle (cr, 5, 12, lev, 12);
     cairo_fill (cr);
 
-    if (powered)
+    // show icons
+    if (powered == 1 && pt->flash)
     {
-        cairo_set_source_rgba (cr, 0.5, 0.5, 0.5, 0.5);
-        cairo_rectangle (cr, 17, 14, 1, 8);
-        cairo_rectangle (cr, 19, 13, 1, 10);
-        cairo_rectangle (cr, 7, 16, 4, 3);
-        cairo_rectangle (cr, 11, 17, 4, 3);
-        cairo_fill (cr);
-        cairo_set_source_rgb (cr, 0.5, 0.5, 0.5);
-        cairo_rectangle (cr, 20, 13, 4, 10);
-        cairo_rectangle (cr, 17, 15, 10, 2);
-        cairo_rectangle (cr, 17, 19, 10, 2);
-        cairo_rectangle (cr, 18, 14, 2, 8);
-        cairo_rectangle (cr, 16, 16, 1, 4);
-        cairo_rectangle (cr, 6, 17, 2, 2);
-        cairo_rectangle (cr, 8, 16, 2, 2);
-        cairo_rectangle (cr, 10, 17, 2, 2);
-        cairo_rectangle (cr, 12, 18, 2, 2);
-        cairo_rectangle (cr, 14, 17, 4, 2);
-        cairo_fill (cr);
-        // can you tell what it is yet...?
+        gdk_cairo_set_source_pixbuf (cr, pt->flash, 2, 2);
+        cairo_paint (cr);
+    }
+    if (powered == 2 && pt->plug)
+    {
+        gdk_cairo_set_source_pixbuf (cr, pt->plug, 2, 2);
+        cairo_paint (cr);
     }
 
     // create a pixbuf from the cairo surface
@@ -310,7 +306,7 @@ static void update_icon (PtBattPlugin *pt)
     else if (status == STAT_EXT_POWER)
     {
         sprintf (str, _("Charged : %d%%\nOn external power"), capacity);
-        draw_icon (pt, w, 0, 1, 0, 1);
+        draw_icon (pt, w, 0, 0.8, 0, 2);
     }
     else
     {
@@ -321,7 +317,7 @@ static void update_icon (PtBattPlugin *pt)
         else
             sprintf (str, _("Discharging : %d%%\nTime remaining = %0.1f hours"), capacity, ftime);
         if (capacity <= 20) draw_icon (pt, w, 1, 0, 0, 0);
-        else draw_icon (pt, w, 0, 1, 0, 0);
+        else draw_icon (pt, w, 0, 0.8, 0, 0);
     }
 
     // set the tooltip
@@ -397,6 +393,10 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
 
     /* Allocate icon as a child of top level */
     gtk_container_add (GTK_CONTAINER(p), pt->tray_icon);
+
+    /* Load the symbols */
+    pt->plug = gdk_pixbuf_new_from_file ("/usr/share/lxpanel/images/plug.png", NULL);
+    pt->flash = gdk_pixbuf_new_from_file ("/usr/share/lxpanel/images/flash.png", NULL);
 
     /* Show the widget */
     gtk_widget_show_all (p);
