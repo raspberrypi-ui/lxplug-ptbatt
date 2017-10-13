@@ -217,12 +217,24 @@ static void draw_icon (PtBattPlugin *pt, int lev, float r, float g, float b, int
 
     // draw base icon on surface
     cairo_set_source_rgb (cr, b, g, r);
+    cairo_rectangle (cr, 4, 9, 26, 1);
+    cairo_rectangle (cr, 3, 10, 28, 1);
+    cairo_rectangle (cr, 3, 25, 28, 1);
+    cairo_rectangle (cr, 4, 26, 26, 1);
+    cairo_rectangle (cr, 2, 11, 2, 14);
+    cairo_rectangle (cr, 30, 11, 2, 14);
+    cairo_rectangle (cr, 32, 15, 2, 6);
+    cairo_fill (cr);
 
-    cairo_rectangle (cr, 4, 10, 26, 1);
-    cairo_rectangle (cr, 4, 25, 26, 1);
-    cairo_rectangle (cr, 3, 11, 1, 14);
-    cairo_rectangle (cr, 30, 11, 1, 14);
-    cairo_rectangle (cr, 31, 15, 2, 6);
+    cairo_set_source_rgba (cr, b, g, r, 0.3);
+    cairo_rectangle (cr, 3, 9, 1, 1);
+    cairo_rectangle (cr, 2, 10, 1, 1);
+    cairo_rectangle (cr, 2, 25, 1, 1);
+    cairo_rectangle (cr, 3, 26, 1, 1);
+    cairo_rectangle (cr, 30, 9, 1, 1);
+    cairo_rectangle (cr, 31, 10, 1, 1);
+    cairo_rectangle (cr, 31, 25, 1, 1);
+    cairo_rectangle (cr, 30, 26, 1, 1);
     cairo_fill (cr);
 
     // fill the battery
