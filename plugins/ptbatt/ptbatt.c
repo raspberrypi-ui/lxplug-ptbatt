@@ -218,18 +218,14 @@ static void draw_icon (PtBattPlugin *pt, int lev, float r, float g, float b, int
     // draw base icon on surface
     cairo_set_source_rgb (cr, b, g, r);
 
-    cairo_rectangle (cr, 4, 11, 26, 14);
-    cairo_rectangle (cr, 5, 10, 24, 1);
-    cairo_rectangle (cr, 5, 25, 24, 1);
-    cairo_rectangle (cr, 3, 12, 1, 12);
-    cairo_rectangle (cr, 30, 12, 1, 12);
+    cairo_rectangle (cr, 4, 10, 26, 1);
+    cairo_rectangle (cr, 4, 25, 26, 1);
+    cairo_rectangle (cr, 3, 11, 1, 14);
+    cairo_rectangle (cr, 30, 11, 1, 14);
     cairo_rectangle (cr, 31, 15, 2, 6);
     cairo_fill (cr);
 
     // fill the battery
-    cairo_set_source_rgb (cr, 1, 1, 1);
-    cairo_rectangle (cr, 5, 12, 24, 12);
-    cairo_fill (cr);
     cairo_set_source_rgb (cr, b, g, r);
     cairo_rectangle (cr, 5, 12, lev, 12);
     cairo_fill (cr);
@@ -237,7 +233,7 @@ static void draw_icon (PtBattPlugin *pt, int lev, float r, float g, float b, int
     // show icons
     if (powered == 1 && pt->flash)
     {
-        gdk_cairo_set_source_pixbuf (cr, pt->flash, 2, 2);
+        gdk_cairo_set_source_pixbuf (cr, pt->flash, 3, 2);
         cairo_paint (cr);
     }
     if (powered == 2 && pt->plug)
@@ -257,7 +253,6 @@ static void draw_icon (PtBattPlugin *pt, int lev, float r, float g, float b, int
     g_object_ref_sink (pixbuf);
     cairo_destroy (cr);
 }
-
 
 /* Update the "filling" animation while charging */
 #ifdef CHARGE_ANIM
@@ -324,7 +319,7 @@ static void update_icon (PtBattPlugin *pt)
     else if (status == STAT_EXT_POWER)
     {
         sprintf (str, _("Charged : %d%%\nOn external power"), capacity);
-        draw_icon (pt, w, 0, 0.8, 0, 2);
+        draw_icon (pt, w, 0, 0.85, 0, 2);
     }
     else
     {
@@ -335,7 +330,7 @@ static void update_icon (PtBattPlugin *pt)
         else
             sprintf (str, _("Discharging : %d%%\nTime remaining = %0.1f hours"), capacity, ftime);
         if (capacity <= 20) draw_icon (pt, w, 1, 0, 0, 0);
-        else draw_icon (pt, w, 0, 0.8, 0, 0);
+        else draw_icon (pt, w, 0, 0.85, 0, 0);
     }
 
     // set the tooltip
