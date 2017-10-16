@@ -325,7 +325,7 @@ static void update_icon (PtBattPlugin *pt)
         else
             sprintf (str, _("Charging : %d%%\nTime remaining = %0.1f hours"), capacity, ftime);
 #ifndef CHARGE_ANIM
-        draw_icon (pt, w, 1, 0.75, 0, 1);
+        draw_icon (pt, w, 0.95, 0.64, 0, 1);
 #endif
     }
     else if (status == STAT_EXT_POWER)
