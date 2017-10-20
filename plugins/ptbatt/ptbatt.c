@@ -47,6 +47,69 @@ typedef enum
 } status_t;
 
 
+/* gdk_pixbuf_get_from_surface function from GDK+3 */
+
+static void
+convert_alpha (guchar *dest_data,
+               int     dest_stride,
+               guchar *src_data,
+               int     src_stride,
+               int     src_x,
+               int     src_y,
+               int     width,
+               int     height)
+{
+  int x, y;
+
+  src_data += src_stride * src_y + src_x * 4;
+
+  for (y = 0; y < height; y++) {
+    guint32 *src = (guint32 *) src_data;
+
+    for (x = 0; x < width; x++) {
+      guint alpha = src[x] >> 24;
+
+      if (alpha == 0)
+        {
+          dest_data[x * 4 + 0] = 0;
+          dest_data[x * 4 + 1] = 0;
+          dest_data[x * 4 + 2] = 0;
+        }
+      else
+        {
+          dest_data[x * 4 + 0] = (((src[x] & 0xff0000) >> 16) * 255 + alpha / 2) / alpha;
+          dest_data[x * 4 + 1] = (((src[x] & 0x00ff00) >>  8) * 255 + alpha / 2) / alpha;
+          dest_data[x * 4 + 2] = (((src[x] & 0x0000ff) >>  0) * 255 + alpha / 2) / alpha;
+        }
+      dest_data[x * 4 + 3] = alpha;
+    }
+
+    src_data += src_stride;
+    dest_data += dest_stride;
+  }
+}
+
+GdkPixbuf *
+gdk_pixbuf_get_from_surface  (cairo_surface_t *surface,
+                              gint             src_x,
+                              gint             src_y,
+                              gint             width,
+                              gint             height)
+{
+  GdkPixbuf *dest = gdk_pixbuf_new (GDK_COLORSPACE_RGB, TRUE, 8, width, height);
+
+  convert_alpha (gdk_pixbuf_get_pixels (dest),
+                   gdk_pixbuf_get_rowstride (dest),
+                   cairo_image_surface_get_data (surface),
+                   cairo_image_surface_get_stride (surface),
+                   0, 0,
+                   width, height);
+
+  cairo_surface_destroy (surface);
+  return dest;
+}
+
+
 /* i2c support for pi-top */
 
 #ifdef __arm__
@@ -216,7 +279,7 @@ static void draw_icon (PtBattPlugin *pt, int lev, float r, float g, float b, int
     cairo_fill (cr);
 
     // draw base icon on surface
-    cairo_set_source_rgb (cr, b, g, r);
+    cairo_set_source_rgb (cr, r, g, b);
     cairo_rectangle (cr, 4, 9, 26, 1);
     cairo_rectangle (cr, 3, 10, 28, 1);
     cairo_rectangle (cr, 3, 25, 28, 1);
@@ -226,7 +289,7 @@ static void draw_icon (PtBattPlugin *pt, int lev, float r, float g, float b, int
     cairo_rectangle (cr, 32, 15, 2, 6);
     cairo_fill (cr);
 
-    cairo_set_source_rgba (cr, b, g, r, 0.3);
+    cairo_set_source_rgba (cr, r, g, b, 0.5);
     cairo_rectangle (cr, 3, 9, 1, 1);
     cairo_rectangle (cr, 2, 10, 1, 1);
     cairo_rectangle (cr, 2, 25, 1, 1);
@@ -238,7 +301,7 @@ static void draw_icon (PtBattPlugin *pt, int lev, float r, float g, float b, int
     cairo_fill (cr);
 
     // fill the battery
-    cairo_set_source_rgb (cr, b, g, r);
+    cairo_set_source_rgb (cr, r, g, b);
     cairo_rectangle (cr, 5, 12, lev, 12);
     cairo_fill (cr);
 
@@ -255,8 +318,7 @@ static void draw_icon (PtBattPlugin *pt, int lev, float r, float g, float b, int
     }
 
     // create a pixbuf from the cairo surface
-    GdkPixbuf *pixbuf = gdk_pixbuf_new_from_data (cairo_image_surface_get_data (surface),
-        GDK_COLORSPACE_RGB, TRUE, 8, DIM, DIM, DIM * 4, NULL, NULL);
+    GdkPixbuf *pixbuf = gdk_pixbuf_get_from_surface (surface, 0, 0, 36, 36);
 
     // copy the pixbuf to the icon resource
     g_object_ref_sink (pt->tray_icon);
