@@ -383,9 +383,9 @@ static void update_icon (PtBattPlugin *pt)
         if (time <= 0)
             sprintf (str, _("Charging : %d%%"), capacity);
         else if (time < 90)
-            sprintf (str, _("Charging : %d%%\nTime remaining = %d minutes"), capacity, time);
+            sprintf (str, _("Charging : %d%%\nTime remaining : %d minutes"), capacity, time);
         else
-            sprintf (str, _("Charging : %d%%\nTime remaining = %0.1f hours"), capacity, ftime);
+            sprintf (str, _("Charging : %d%%\nTime remaining : %0.1f hours"), capacity, ftime);
 #ifndef CHARGE_ANIM
         draw_icon (pt, w, 0.95, 0.64, 0, 1);
 #endif
@@ -400,9 +400,9 @@ static void update_icon (PtBattPlugin *pt)
         if (time <= 0)
             sprintf (str, _("Discharging : %d%%"), capacity);
         else if (time < 90)
-            sprintf (str, _("Discharging : %d%%\nTime remaining = %d minutes"), capacity, time);
+            sprintf (str, _("Discharging : %d%%\nTime remaining : %d minutes"), capacity, time);
         else
-            sprintf (str, _("Discharging : %d%%\nTime remaining = %0.1f hours"), capacity, ftime);
+            sprintf (str, _("Discharging : %d%%\nTime remaining : %0.1f hours"), capacity, ftime);
         if (capacity <= 20) draw_icon (pt, w, 1, 0, 0, 0);
         else draw_icon (pt, w, 0, 0.85, 0, 0);
     }

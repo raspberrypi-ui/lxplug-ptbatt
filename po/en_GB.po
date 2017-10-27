@@ -26,19 +26,19 @@ msgstr "Charging : %d%%"
 #, c-format
 msgid ""
 "Charging : %d%%\n"
-"Time remaining = %d minutes"
+"Time remaining : %d minutes"
 msgstr ""
 "Charging : %d%%\n"
-"Time remaining = %d minutes"
+"Time remaining : %d minutes"
 
 #: ../plugins/ptbatt/ptbatt.c:430
 #, c-format
 msgid ""
 "Charging : %d%%\n"
-"Time remaining = %0.1f hours"
+"Time remaining : %0.1f hours"
 msgstr ""
 "Charging : %d%%\n"
-"Time remaining = %0.1f hours"
+"Time remaining : %0.1f hours"
 
 #: ../plugins/ptbatt/ptbatt.c:434
 #, c-format
@@ -58,19 +58,19 @@ msgstr "Discharging : %d%%"
 #, c-format
 msgid ""
 "Discharging : %d%%\n"
-"Time remaining = %d minutes"
+"Time remaining : %d minutes"
 msgstr ""
 "Discharging : %d%%\n"
-"Time remaining = %d minutes"
+"Time remaining : %d minutes"
 
 #: ../plugins/ptbatt/ptbatt.c:444
 #, c-format
 msgid ""
 "Discharging : %d%%\n"
-"Time remaining = %0.1f hours"
+"Time remaining : %0.1f hours"
 msgstr ""
 "Discharging : %d%%\n"
-"Time remaining = %0.1f hours"
+"Time remaining : %0.1f hours"
 
 #: ../plugins/ptbatt/ptbatt.c:534
 msgid "Battery (pi-top / laptop)"
