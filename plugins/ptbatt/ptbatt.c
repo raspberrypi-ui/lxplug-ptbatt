@@ -444,6 +444,10 @@ static void ptbatt_destructor (gpointer user_data)
 {
     PtBattPlugin *pt = (PtBattPlugin *) user_data;
 
+#ifdef __arm__
+    if (pt->i2c_handle) close (pt->i2c_handle);
+#endif
+
     /* Deallocate memory */
     g_free (pt);
 }
