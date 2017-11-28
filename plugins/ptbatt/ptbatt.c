@@ -185,7 +185,8 @@ static int init_measurement (PtBattPlugin *pt)
         // i2c available - look for a battery
         if (i2cget (pt->i2c_handle, 0x0d) > 0) return 1;
 
-        // if none found, remove the handle
+        // if none found, close and remove the handle
+        close (pt->i2c_handle);
         pt->i2c_handle = 0;
     }
 #endif
