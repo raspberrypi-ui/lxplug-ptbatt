@@ -280,30 +280,33 @@ static void draw_icon (PtBattPlugin *pt, int lev, float r, float g, float b, int
     cairo_fill (cr);
 
     // draw base icon on surface
+    int h = panel_get_icon_size (pt->panel) > 20 ? 16 : 14;
+    int t = (DIM - h) / 2 - 1;
+    int u = DIM - t - 1;
     cairo_set_source_rgb (cr, r, g, b);
-    cairo_rectangle (cr, 4, 9, 26, 1);
-    cairo_rectangle (cr, 3, 10, 28, 1);
-    cairo_rectangle (cr, 3, 25, 28, 1);
-    cairo_rectangle (cr, 4, 26, 26, 1);
-    cairo_rectangle (cr, 2, 11, 2, 14);
-    cairo_rectangle (cr, 30, 11, 2, 14);
+    cairo_rectangle (cr, 4, t, 26, 1);
+    cairo_rectangle (cr, 3, t + 1, 28, 1);
+    cairo_rectangle (cr, 3, u - 1, 28, 1);
+    cairo_rectangle (cr, 4, u, 26, 1);
+    cairo_rectangle (cr, 2, t + 2, 2, h - 2);
+    cairo_rectangle (cr, 30, t + 2, 2, h - 2);
     cairo_rectangle (cr, 32, 15, 2, 6);
     cairo_fill (cr);
 
     cairo_set_source_rgba (cr, r, g, b, 0.5);
-    cairo_rectangle (cr, 3, 9, 1, 1);
-    cairo_rectangle (cr, 2, 10, 1, 1);
-    cairo_rectangle (cr, 2, 25, 1, 1);
-    cairo_rectangle (cr, 3, 26, 1, 1);
-    cairo_rectangle (cr, 30, 9, 1, 1);
-    cairo_rectangle (cr, 31, 10, 1, 1);
-    cairo_rectangle (cr, 31, 25, 1, 1);
-    cairo_rectangle (cr, 30, 26, 1, 1);
+    cairo_rectangle (cr, 3, t, 1, 1);
+    cairo_rectangle (cr, 2, t + 1, 1, 1);
+    cairo_rectangle (cr, 2, u - 1, 1, 1);
+    cairo_rectangle (cr, 3, u, 1, 1);
+    cairo_rectangle (cr, 30, t, 1, 1);
+    cairo_rectangle (cr, 31, t + 1, 1, 1);
+    cairo_rectangle (cr, 31, u - 1, 1, 1);
+    cairo_rectangle (cr, 30, u, 1, 1);
     cairo_fill (cr);
 
     // fill the battery
     cairo_set_source_rgb (cr, r, g, b);
-    cairo_rectangle (cr, 5, 12, lev, 12);
+    cairo_rectangle (cr, 5, t + 3, lev, h - 4);
     cairo_fill (cr);
 
     // show icons
