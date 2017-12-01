@@ -1,3 +1,9 @@
+lxplug-ptbatt (0.3) stretch; urgency=medium
+
+  * Shrink icon slightly when icon size is 16 or less
+
+ -- Simon Long <simon@raspberrypi.org>  Fri, 01 Dec 2017 07:25:48 +0000
+
 lxplug-ptbatt (0.2) stretch; urgency=medium
 
   * Release I2C handle if battery not found for ARM
