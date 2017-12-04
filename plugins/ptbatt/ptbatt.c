@@ -33,6 +33,7 @@ typedef struct {
     GdkPixbuf *flash;
 #ifdef __arm__
     int i2c_handle;
+    gboolean pt_batt_avail;
 #endif
 } PtBattPlugin;
 
@@ -40,10 +41,10 @@ typedef struct {
 
 typedef enum
 {
-    STAT_UNKNOWN,
-    STAT_DISCHARGING,
-    STAT_CHARGING,
-    STAT_EXT_POWER
+    STAT_UNKNOWN = -1,
+    STAT_DISCHARGING = 0,
+    STAT_CHARGING = 1,
+    STAT_EXT_POWER = 2
 } status_t;
 
 
@@ -109,6 +110,28 @@ gdk_pixbuf_get_from_surface  (cairo_surface_t *surface,
   return dest;
 }
 
+/* helper function to read integer value from stdout after system call */
+
+static int get_pt_val (char *cmd)
+{
+    FILE *fp;
+    char buf[32];
+    int res = -1, val;
+
+    fp = popen (cmd, "r");
+    if (fp)
+    {
+        if (fgets (buf, sizeof (buf) - 1, fp))
+        {
+            if (sscanf (buf, "%d", &val) == 1)
+            {
+                res = val;
+            }
+        }
+        pclose (fp);
+    }
+    return res;
+}
 
 /* i2c support for pi-top */
 
@@ -179,15 +202,31 @@ static int init_measurement (PtBattPlugin *pt)
     return 1;
 #endif
 #ifdef __arm__
-    pt->i2c_handle = i2chandle ();
-    if (pt->i2c_handle)
+    FILE *fp = fopen ("/usr/bin/pt-battery", "rb");
+    if (fp)
     {
-        // i2c available - look for a battery
-        if (i2cget (pt->i2c_handle, 0x0d) > 0) return 1;
+        fclose (fp);
+        g_message ("pi-top battery monitor found");
+        pt->pt_batt_avail = TRUE;
+        return 1;
+    }
+    else
+    {
+        pt->pt_batt_avail = FALSE;
+        pt->i2c_handle = i2chandle ();
+        if (pt->i2c_handle)
+        {
+            // i2c available - look for a battery
+            if (i2cget (pt->i2c_handle, 0x0d) > 0)
+            {
+                g_message ("pi-top battery found - using direct I2C");
+                return 1;
+            }
 
-        // if none found, close and remove the handle
-        close (pt->i2c_handle);
-        pt->i2c_handle = 0;
+            // if none found, close and remove the handle
+            close (pt->i2c_handle);
+            pt->i2c_handle = 0;
+        }
     }
 #endif
     int val;
@@ -213,10 +252,25 @@ static int charge_level (PtBattPlugin *pt, status_t *status, int *tim)
     *status = STAT_UNKNOWN;
     *tim = 0;
 #ifdef __arm__
-    if (pt->i2c_handle)
-    {
-        int capacity, current, time;
+    int capacity, current, time;
 
+    if (pt->pt_batt_avail)
+    {
+        current = get_pt_val ("pt-battery -s");
+        capacity = get_pt_val ("pt-battery -c");
+        time = get_pt_val ("pt-battery -t");
+
+        if (current == -1 || capacity == -1 || time == -1)
+        {
+            *status = STAT_UNKNOWN;
+            return -1;
+        }
+        *tim = time;
+        *status = (status_t) current;
+        return capacity;
+    }
+    else if (pt->i2c_handle)
+    {
         // capacity
         capacity = i2cget (pt->i2c_handle, 0x0d);
         if (capacity > 100) capacity = -1;
