@@ -112,20 +112,22 @@ gdk_pixbuf_get_from_surface  (cairo_surface_t *surface,
 
 /* helper function to read integer value from stdout after system call */
 
-static int get_pt_val (char *cmd)
+static int get_pt_vals (char *cmd, int *cap, int *tim)
 {
     FILE *fp;
     char buf[32];
-    int res = -1, val;
+    int res = -1, val1, val2, val3;
 
     fp = popen (cmd, "r");
     if (fp)
     {
         if (fgets (buf, sizeof (buf) - 1, fp))
         {
-            if (sscanf (buf, "%d", &val) == 1)
+            if (sscanf (buf, "%d %d %d", &val1, &val2, &val3) == 3)
             {
-                res = val;
+                *cap = val2;
+                *tim = val3;
+                res = val1;
             }
         }
         pclose (fp);
@@ -256,9 +258,7 @@ static int charge_level (PtBattPlugin *pt, status_t *status, int *tim)
 
     if (pt->pt_batt_avail)
     {
-        current = get_pt_val ("pt-battery -s");
-        capacity = get_pt_val ("pt-battery -c");
-        time = get_pt_val ("pt-battery -t");
+        current = get_pt_vals ("pt-battery -sct", &capacity, &time);
 
         if (current == -1 || capacity == -1 || time == -1)
         {
