@@ -122,11 +122,9 @@ static int init_measurement (PtBattPlugin *pt)
 #endif
 #ifdef __arm__
     pt->pt_batt_avail = FALSE;
-    FILE *fp = fopen ("/usr/bin/pt-battery", "rb");
-    if (fp)
+    if (system ("systemctl status pt-device-manager | grep -wq active") == 0)
     {
-        fclose (fp);
-        g_message ("pi-top battery monitor found");
+        g_message ("pi-top device manager found");
         pt->pt_batt_avail = TRUE;
         pt->context = zmq_ctx_new ();
         pt->requester = zmq_socket (pt->context, ZMQ_REQ);
