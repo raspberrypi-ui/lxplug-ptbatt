@@ -40,6 +40,7 @@ else
 fi
 
 pkg_modules="$pkg_modules \
+             libzmq \
              gthread-2.0 \
              gmodule-2.0"
 PKG_CHECK_MODULES(PACKAGE, [$pkg_modules])

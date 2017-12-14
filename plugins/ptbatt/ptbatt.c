@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <asm/ioctl.h>
+#include <zmq.h>
 #include "batt_sys.h"
 
 #include "plugin.h"
@@ -32,8 +33,9 @@ typedef struct {
     GdkPixbuf *plug;
     GdkPixbuf *flash;
 #ifdef __arm__
-    int i2c_handle;
     gboolean pt_batt_avail;
+    void *context;
+    void *requester;
 #endif
 } PtBattPlugin;
 
@@ -110,91 +112,6 @@ gdk_pixbuf_get_from_surface  (cairo_surface_t *surface,
   return dest;
 }
 
-/* helper function to read integer value from stdout after system call */
-
-static int get_pt_vals (char *cmd, int *cap, int *tim)
-{
-    FILE *fp;
-    char buf[32];
-    int res = -1, val1, val2, val3;
-
-    fp = popen (cmd, "r");
-    if (fp)
-    {
-        if (fgets (buf, sizeof (buf) - 1, fp))
-        {
-            if (sscanf (buf, "%d %d %d", &val1, &val2, &val3) == 3)
-            {
-                *cap = val2;
-                *tim = val3;
-                res = val1;
-            }
-        }
-        pclose (fp);
-    }
-    return res;
-}
-
-/* i2c support for pi-top */
-
-#ifdef __arm__
-
-static int i2chandle (void)
-{
-    FILE *fp;
-    int fd;
-
-    fp = fopen ("/dev/i2c-1", "rb");
-    if (fp)
-    {
-        fclose (fp);
-        fd = open ("/dev/i2c-1", O_RDWR);
-        if (fd >= 0)
-        {
-            if (ioctl (fd, 0x0703, 0x0b) >= 0) return fd;
-        }
-    }
-
-    fp = fopen ("/dev/i2c-0", "rb");
-    if (fp)
-    {
-        fclose (fp);
-        fd = open ("/dev/i2c-1", O_RDWR);
-        if (fd >= 0)
-        {
-            if (ioctl (fd, 0x0703, 0x0b) >= 0) return fd;
-        }
-    }
-    return 0;
-}
-
-static int i2cget (int handle, int address)
-{
-    struct i2c_smbus_ioctl_data
-    {
-        char read_write;
-        uint8_t command;
-        int size;
-        uint16_t *data;
-    } args;
-    uint16_t data;
-
-    int count = 0;
-    while (count++ < 20)
-    {
-        args.read_write = 1;
-        args.command = address;
-        args.size = 3;
-        args.data = &data;
-        if (!ioctl (handle, 0x0720, &args))
-             return data & 0xFFFF;
-        usleep (1000);
-    }
-    return -1;
-}
-
-#endif
-
 
 /* Initialise measurements and check for a battery */
 
@@ -204,31 +121,17 @@ static int init_measurement (PtBattPlugin *pt)
     return 1;
 #endif
 #ifdef __arm__
+    pt->pt_batt_avail = FALSE;
     FILE *fp = fopen ("/usr/bin/pt-battery", "rb");
     if (fp)
     {
         fclose (fp);
         g_message ("pi-top battery monitor found");
         pt->pt_batt_avail = TRUE;
+        pt->context = zmq_ctx_new ();
+        pt->requester = zmq_socket (pt->context, ZMQ_REQ);
+        if (zmq_connect (pt->requester, "tcp://127.0.0.1:3782")) return 0;
         return 1;
-    }
-    else
-    {
-        pt->pt_batt_avail = FALSE;
-        pt->i2c_handle = i2chandle ();
-        if (pt->i2c_handle)
-        {
-            // i2c available - look for a battery
-            if (i2cget (pt->i2c_handle, 0x0d) > 0)
-            {
-                g_message ("pi-top battery found - using direct I2C");
-                return 1;
-            }
-
-            // if none found, close and remove the handle
-            close (pt->i2c_handle);
-            pt->i2c_handle = 0;
-        }
     }
 #endif
     int val;
@@ -254,50 +157,27 @@ static int charge_level (PtBattPlugin *pt, status_t *status, int *tim)
     *status = STAT_UNKNOWN;
     *tim = 0;
 #ifdef __arm__
-    int capacity, current, time;
+    int capacity, state, time, res;
 
     if (pt->pt_batt_avail)
     {
-        current = get_pt_vals ("pt-battery -sct", &capacity, &time);
-
-        if (current == -1 || capacity == -1 || time == -1)
+        char buffer[100];
+        zmq_send (pt->requester, "118", 3, 0);
+        zmq_recv (pt->requester, buffer, 100, 0);
+        if (sscanf (buffer, "%d|%d|%d|%d|", &res, &state, &capacity, &time) == 4)
         {
-            *status = STAT_UNKNOWN;
-            return -1;
-        }
-        *tim = time;
-        *status = (status_t) current;
-        return capacity;
-    }
-    else if (pt->i2c_handle)
-    {
-        // capacity
-        capacity = i2cget (pt->i2c_handle, 0x0d);
-        if (capacity > 100) capacity = -1;
-
-        // current
-        current = i2cget (pt->i2c_handle, 0x0a);
-        if (current != -1)
-        {
-            if (current > 32767) current -= 65536;
-            if (current > -5000 && current < 5000)
+            if (res == 218 && (state == STAT_CHARGING || state == STAT_DISCHARGING || state == STAT_EXT_POWER))
             {
-                if (current < 0) *status = STAT_DISCHARGING;
-                else if (current > 0) *status = STAT_CHARGING;
-                else *status = STAT_EXT_POWER;
+                if (capacity == 100 && time == 0) *status = STAT_EXT_POWER;
+                else
+                *status = (status_t) state;
+                *tim = time;
+                return capacity;
             }
         }
 
-        // charging/discharging time
-        if (*status == STAT_CHARGING)
-            time = i2cget (pt->i2c_handle, 0x13);
-        else if (*status == STAT_DISCHARGING)
-            time = i2cget (pt->i2c_handle, 0x12);
-        else time = 0;
-        if (time == -1) *status = STAT_UNKNOWN;
-        else if (time < 1000) *tim = time;
-
-        return capacity;
+        *status = STAT_UNKNOWN;
+        return -1;
     }
 #endif
     battery *b = pt->batt;
@@ -502,7 +382,8 @@ static void ptbatt_destructor (gpointer user_data)
     PtBattPlugin *pt = (PtBattPlugin *) user_data;
 
 #ifdef __arm__
-    if (pt->i2c_handle) close (pt->i2c_handle);
+    zmq_close (pt->requester);
+    zmq_ctx_destroy (pt->context);
 #endif
 
     /* Deallocate memory */
