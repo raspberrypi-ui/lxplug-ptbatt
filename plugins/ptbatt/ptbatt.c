@@ -127,9 +127,20 @@ static int init_measurement (PtBattPlugin *pt)
         g_message ("pi-top device manager found");
         pt->pt_batt_avail = TRUE;
         pt->context = zmq_ctx_new ();
-        pt->requester = zmq_socket (pt->context, ZMQ_REQ);
-        if (zmq_connect (pt->requester, "tcp://127.0.0.1:3782")) return 0;
-        return 1;
+        if (pt->context)
+        {
+            pt->requester = zmq_socket (pt->context, ZMQ_REQ);
+            if (pt->requester)
+            {
+                if (zmq_connect (pt->requester, "tcp://127.0.0.1:3782") == 0)
+                {
+                    g_message ("connected to pi-top device manager");
+                    return 1;
+                }
+            }
+        }
+        else pt->requester = NULL;
+        return 0;
     }
 #endif
     int val;
@@ -159,18 +170,28 @@ static int charge_level (PtBattPlugin *pt, status_t *status, int *tim)
 
     if (pt->pt_batt_avail)
     {
-        char buffer[100];
-        zmq_send (pt->requester, "118", 3, 0);
-        zmq_recv (pt->requester, buffer, 100, 0);
-        if (sscanf (buffer, "%d|%d|%d|%d|", &res, &state, &capacity, &time) == 4)
+        if (pt->requester)
         {
-            if (res == 218 && (state == STAT_CHARGING || state == STAT_DISCHARGING || state == STAT_EXT_POWER))
+            if (zmq_send (pt->requester, "118", 3, 0) == 3)
             {
-                if (capacity == 100 && time == 0) *status = STAT_EXT_POWER;
-                else
-                *status = (status_t) state;
-                *tim = time;
-                return capacity;
+                char buffer[100];
+                res = zmq_recv (pt->requester, buffer, 100, 0);
+                if (res > 0 && res < 100)
+                {
+                    buffer[res] = 0;
+                    if (sscanf (buffer, "%d|%d|%d|%d|", &res, &state, &capacity, &time) == 4)
+                    {
+                        if (res == 218 && (state == STAT_CHARGING || state == STAT_DISCHARGING || state == STAT_EXT_POWER))
+                        {
+                            // these two lines shouldn't be necessary once EXT_POWER state is implemented in the device manager
+                            if (capacity == 100 && time == 0) *status = STAT_EXT_POWER;
+                            else
+                            *status = (status_t) state;
+                            *tim = time;
+                            return capacity;
+                        }
+                    }
+                }
             }
         }
 
