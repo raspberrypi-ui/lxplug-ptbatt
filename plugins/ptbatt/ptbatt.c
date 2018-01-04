@@ -15,7 +15,7 @@
 
 #include "plugin.h"
 
-#define TEST_MODE
+//#define TEST_MODE
 #ifdef TEST_MODE
 #define INTERVAL 500
 #else
@@ -232,18 +232,14 @@ static int charge_level (PtBattPlugin *pt, status_t *status, int *tim)
 
 static void draw_icon (PtBattPlugin *pt, int lev, float r, float g, float b, int powered)
 {
-    // calculate dimensions based on icon size
     int h, w, f, ic; 
 
+    // calculate dimensions based on icon size
     ic = panel_get_icon_size (pt->panel);
-    h = 18;
-    w = 36;
-    if (ic > 20) h += 2;
-    if (ic > 36)
-    {
-        h += 4;
-        w = 44;//50;
-    }
+    w = ic < 36 ? 36 : ic;
+    h = ((w * 10) / 36) * 2; // force it to be even
+    if (h < 18) h = 18;
+    if (h >= ic) h = ic - 2;
 
     // create and clear the drawing surface
     cairo_surface_t *surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, w, h);
