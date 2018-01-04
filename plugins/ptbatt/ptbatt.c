@@ -15,8 +15,12 @@
 
 #include "plugin.h"
 
-//#define TEST_MODE
-//#define CHARGE_ANIM
+#define TEST_MODE
+#ifdef TEST_MODE
+#define INTERVAL 500
+#else
+#define INTERVAL 5000
+#endif
 
 /* Plug-in global data */
 
@@ -25,10 +29,6 @@ typedef struct {
     LXPanel *panel;                 /* Back pointer to panel */
     GtkWidget *tray_icon;           /* Displayed image */
     config_setting_t *settings;     /* Plugin settings */
-#ifdef CHARGE_ANIM
-    int c_pos;                      /* Used for charging animation */
-    int c_level;                    /* Used for charging animation */
-#endif
     battery *batt;
     GdkPixbuf *plug;
     GdkPixbuf *flash;
@@ -159,9 +159,18 @@ static int init_measurement (PtBattPlugin *pt)
 static int charge_level (PtBattPlugin *pt, status_t *status, int *tim)
 {
 #ifdef TEST_MODE
-    *status = STAT_CHARGING;
-    *tim = 30;
-    return 50;
+    static int level = 0;
+   *tim = 30;
+    if (level < 100) level +=5;
+    else level = -100;
+    if (level < 0)
+    {
+        *status = STAT_DISCHARGING;
+        return (level * -1);
+    }
+    else if (level == 100) *status = STAT_EXT_POWER;
+    else *status = STAT_CHARGING;
+    return level;
 #endif
     *status = STAT_UNKNOWN;
     *tim = 0;
@@ -221,61 +230,77 @@ static int charge_level (PtBattPlugin *pt, status_t *status, int *tim)
 
 /* Draw the icon in relevant colour and fill level */
 
-#define DIM 36
-
 static void draw_icon (PtBattPlugin *pt, int lev, float r, float g, float b, int powered)
 {
+    // calculate dimensions based on icon size
+    int h, w, f, ic; 
+
+    ic = panel_get_icon_size (pt->panel);
+    h = 18;
+    w = 36;
+    if (ic > 20) h += 2;
+    if (ic > 36)
+    {
+        h += 4;
+        w = 44;//50;
+    }
+
     // create and clear the drawing surface
-    cairo_surface_t *surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, DIM, DIM);
+    cairo_surface_t *surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, w, h);
     cairo_t *cr = cairo_create (surface);
     cairo_set_source_rgba (cr, 0, 0, 0, 0);
-    cairo_rectangle (cr, 0, 0, DIM, DIM);
+    cairo_rectangle (cr, 0, 0, w, h);
     cairo_fill (cr);
 
     // draw base icon on surface
-    int h = panel_get_icon_size (pt->panel) > 20 ? 16 : 14;
-    int t = (DIM - h) / 2 - 1;
-    int u = DIM - t - 1;
     cairo_set_source_rgb (cr, r, g, b);
-    cairo_rectangle (cr, 4, t, 26, 1);
-    cairo_rectangle (cr, 3, t + 1, 28, 1);
-    cairo_rectangle (cr, 3, u - 1, 28, 1);
-    cairo_rectangle (cr, 4, u, 26, 1);
-    cairo_rectangle (cr, 2, t + 2, 2, h - 2);
-    cairo_rectangle (cr, 30, t + 2, 2, h - 2);
-    cairo_rectangle (cr, 32, 15, 2, 6);
+    cairo_rectangle (cr, 4, 1, w - 10, 1);
+    cairo_rectangle (cr, 3, 2, w - 8, 1);
+    cairo_rectangle (cr, 3, h - 3, w - 8, 1);
+    cairo_rectangle (cr, 4, h - 2, w - 10, 1);
+    cairo_rectangle (cr, 2, 3, 2, h - 6);
+    cairo_rectangle (cr, w - 6, 3, 2, h - 6);
+    cairo_rectangle (cr, w - 4, (h >> 1) - 3, 2, 6);
     cairo_fill (cr);
 
     cairo_set_source_rgba (cr, r, g, b, 0.5);
-    cairo_rectangle (cr, 3, t, 1, 1);
-    cairo_rectangle (cr, 2, t + 1, 1, 1);
-    cairo_rectangle (cr, 2, u - 1, 1, 1);
-    cairo_rectangle (cr, 3, u, 1, 1);
-    cairo_rectangle (cr, 30, t, 1, 1);
-    cairo_rectangle (cr, 31, t + 1, 1, 1);
-    cairo_rectangle (cr, 31, u - 1, 1, 1);
-    cairo_rectangle (cr, 30, u, 1, 1);
+    cairo_rectangle (cr, 3, 1, 1, 1);
+    cairo_rectangle (cr, 2, 2, 1, 1);
+    cairo_rectangle (cr, 2, h - 3, 1, 1);
+    cairo_rectangle (cr, 3, h - 2, 1, 1);
+    cairo_rectangle (cr, w - 6, 1, 1, 1);
+    cairo_rectangle (cr, w - 5, 2, 1, 1);
+    cairo_rectangle (cr, w - 5, h - 3, 1, 1);
+    cairo_rectangle (cr, w - 6, h - 2, 1, 1);
     cairo_fill (cr);
 
     // fill the battery
+    if (lev < 0) f = 0;
+    else if (lev > 97) f = w - 12;
+    else
+    {
+        f = (w - 12) * lev;
+        f /= 97;
+        if (f > w - 12) f = w - 12;
+    }
     cairo_set_source_rgb (cr, r, g, b);
-    cairo_rectangle (cr, 5, t + 3, lev, h - 4);
+    cairo_rectangle (cr, 5, 4, f, h - 8);
     cairo_fill (cr);
 
     // show icons
     if (powered == 1 && pt->flash)
     {
-        gdk_cairo_set_source_pixbuf (cr, pt->flash, 3, 2);
+        gdk_cairo_set_source_pixbuf (cr, pt->flash, (w >> 1) - 15, (h >> 1) - 16);
         cairo_paint (cr);
     }
     if (powered == 2 && pt->plug)
     {
-        gdk_cairo_set_source_pixbuf (cr, pt->plug, 2, 2);
+        gdk_cairo_set_source_pixbuf (cr, pt->plug, (w >> 1) - 16, (h >> 1) - 16);
         cairo_paint (cr);
     }
 
     // create a pixbuf from the cairo surface
-    GdkPixbuf *pixbuf = gdk_pixbuf_get_from_surface (surface, 0, 0, 36, 36);
+    GdkPixbuf *pixbuf = gdk_pixbuf_get_from_surface (surface, 0, 0, w, h);
 
     // copy the pixbuf to the icon resource
     g_object_ref_sink (pt->tray_icon);
@@ -285,26 +310,11 @@ static void draw_icon (PtBattPlugin *pt, int lev, float r, float g, float b, int
     cairo_destroy (cr);
 }
 
-/* Update the "filling" animation while charging */
-#ifdef CHARGE_ANIM
-static gboolean charge_anim (PtBattPlugin *pt)
-{
-    if (pt->c_pos)
-    {
-        if (pt->c_pos < pt->c_level) pt->c_pos++;
-        else pt->c_pos = 1;
-        draw_icon (pt, pt->c_pos, 1, 0.75, 0, 1);
-        return TRUE;
-    }
-    else return FALSE;
-}
-#endif
-
 /* Read the current charge state and update the icon accordingly */
 
 static void update_icon (PtBattPlugin *pt)
 {
-    int capacity, w, time;
+    int capacity, time;
     status_t status;
     float ftime;
     char str[255];
@@ -314,27 +324,7 @@ static void update_icon (PtBattPlugin *pt)
     if (status == STAT_UNKNOWN) return;
     ftime = time / 60.0;
 
-    // fill the battery symbol
-    if (capacity < 0) w = 0;
-    else if (capacity > 100) w = 24;
-    else w = (99 * capacity) / 400;
-
-#ifdef CHARGE_ANIM
-    if (status == STAT_CHARGING)
-    {
-        if (pt->c_pos == 0)
-        {
-            pt->c_pos = 1;
-            g_timeout_add (250, (GSourceFunc) charge_anim, (gpointer) pt);
-        }
-        pt->c_level = w;
-    }
-    else
-    {
-        if (pt->c_pos != 0) pt->c_pos = 0;
-    }
-#endif
-
+    // fill the battery symbol and create the tooltip
     if (status == STAT_CHARGING)
     {
         if (time <= 0)
@@ -343,14 +333,12 @@ static void update_icon (PtBattPlugin *pt)
             sprintf (str, _("Charging : %d%%\nTime remaining : %d minutes"), capacity, time);
         else
             sprintf (str, _("Charging : %d%%\nTime remaining : %0.1f hours"), capacity, ftime);
-#ifndef CHARGE_ANIM
-        draw_icon (pt, w, 0.95, 0.64, 0, 1);
-#endif
+        draw_icon (pt, capacity, 0.95, 0.64, 0, 1);
     }
     else if (status == STAT_EXT_POWER)
     {
         sprintf (str, _("Charged : %d%%\nOn external power"), capacity);
-        draw_icon (pt, w, 0, 0.85, 0, 2);
+        draw_icon (pt, capacity, 0, 0.85, 0, 2);
     }
     else
     {
@@ -360,8 +348,8 @@ static void update_icon (PtBattPlugin *pt)
             sprintf (str, _("Discharging : %d%%\nTime remaining : %d minutes"), capacity, time);
         else
             sprintf (str, _("Discharging : %d%%\nTime remaining : %0.1f hours"), capacity, ftime);
-        if (capacity <= 20) draw_icon (pt, w, 1, 0, 0, 0);
-        else draw_icon (pt, w, 0, 0.85, 0, 0);
+        if (capacity <= 20) draw_icon (pt, capacity, 1, 0, 0, 0);
+        else draw_icon (pt, capacity, 0, 0.85, 0, 0);
     }
 
     // set the tooltip
@@ -451,7 +439,7 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
     gtk_widget_show_all (p);
 
     /* Start timed events to monitor status */
-    g_timeout_add (5000, (GSourceFunc) timer_event, (gpointer) pt);
+    g_timeout_add (INTERVAL, (GSourceFunc) timer_event, (gpointer) pt);
 
     return p;
 }
