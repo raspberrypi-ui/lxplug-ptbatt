@@ -10,7 +10,9 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <asm/ioctl.h>
+#ifdef __arm__
 #include <zmq.h>
+#endif
 #include "batt_sys.h"
 
 #include "plugin.h"
