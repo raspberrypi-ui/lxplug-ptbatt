@@ -3,6 +3,7 @@ AC_INIT(lxplug_ptbatt, 0.1, http://raspberrypi.org/)
 AM_INIT_AUTOMAKE([-Wall foreign subdir-objects no-dist-gzip dist-xz])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
+AC_CANONICAL_HOST
 
 # Support silent build rules. Disable by either passing --disable-silent-rules
 # to configure or passing V=1 to make
@@ -40,9 +41,14 @@ else
 fi
 
 pkg_modules="$pkg_modules \
-             libzmq \
              gthread-2.0 \
              gmodule-2.0"
+
+case "$host_cpu" in
+    *arm*) pkg_modules="$pkg_modules \
+             libzmq" ;;
+esac
+
 PKG_CHECK_MODULES(PACKAGE, [$pkg_modules])
 AC_SUBST(PACKAGE_CFLAGS)
 AC_SUBST(PACKAGE_LIBS)
