@@ -1,8 +1,9 @@
 lxplug-ptbatt (0.3) stretch; urgency=medium
 
-  * Shrink icon slightly when icon size is 16 or less
+  * Use ZMQ to access pt-hub battery monitor on PiTop
+  * Resize icon with icon size parameter
 
- -- Simon Long <simon@raspberrypi.org>  Fri, 01 Dec 2017 07:25:48 +0000
+ -- Simon Long <simon@raspberrypi.org>  Fri, 12 Jan 2018 07:25:48 +0000
 
 lxplug-ptbatt (0.2) stretch; urgency=medium
 
