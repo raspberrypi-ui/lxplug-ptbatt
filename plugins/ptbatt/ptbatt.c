@@ -61,6 +61,7 @@ typedef struct {
     battery *batt;
     GdkPixbuf *plug;
     GdkPixbuf *flash;
+    guint timer;
 #ifdef __arm__
     gboolean pt_batt_avail;
     void *context;
@@ -411,6 +412,9 @@ static void ptbatt_destructor (gpointer user_data)
 {
     PtBattPlugin *pt = (PtBattPlugin *) user_data;
 
+    /* Disconnect the timer. */
+    g_source_remove (pt->timer);
+
 #ifdef __arm__
     zmq_close (pt->requester);
     zmq_ctx_destroy (pt->context);
@@ -462,7 +466,7 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
     gtk_widget_show_all (p);
 
     /* Start timed events to monitor status */
-    g_timeout_add (INTERVAL, (GSourceFunc) timer_event, (gpointer) pt);
+    pt->timer = g_timeout_add (INTERVAL, (GSourceFunc) timer_event, (gpointer) pt);
 
     return p;
 }
