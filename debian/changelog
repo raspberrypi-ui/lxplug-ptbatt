@@ -1,3 +1,9 @@
+lxplug-ptbatt (0.5) stretch; urgency=medium
+
+  * Remove update timer when plugin is closed
+
+ -- Simon Long <simon@raspberrypi.org>  Sun, 28 Apr 2019 12:38:27 +0100
+
 lxplug-ptbatt (0.4) stretch; urgency=medium
 
   * Make robust against device manager crashing on PiTop
