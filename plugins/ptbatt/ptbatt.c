@@ -429,10 +429,7 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
 {
     /* Allocate and initialize plugin context */
     PtBattPlugin *pt = g_new0 (PtBattPlugin, 1);
-    GtkWidget *p;
 
-    pt->settings = settings;
-    
 #ifdef ENABLE_NLS
     setlocale (LC_ALL, "");
     bindtextdomain ( GETTEXT_PACKAGE, PACKAGE_LOCALE_DIR );
@@ -440,35 +437,41 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
     textdomain ( GETTEXT_PACKAGE );
 #endif
 
-    /* Initialise measurements and check for a battery */
-    if (!init_measurement (pt)) return NULL;
-
     pt->tray_icon = gtk_image_new ();
     gtk_widget_set_visible (pt->tray_icon, TRUE);
 
     /* Allocate top level widget and set into Plugin widget pointer. */
     pt->panel = panel;
-    pt->plugin = p = gtk_button_new ();
+    pt->plugin = gtk_button_new ();
     gtk_button_set_relief (GTK_BUTTON (pt->plugin), GTK_RELIEF_NONE);
     g_signal_connect (pt->plugin, "button-press-event", G_CALLBACK(ptbatt_button_press_event), NULL);
     pt->settings = settings;
-    lxpanel_plugin_set_data (p, pt, ptbatt_destructor);
-    gtk_widget_add_events (p, GDK_BUTTON_PRESS_MASK);
+    lxpanel_plugin_set_data (pt->plugin, pt, ptbatt_destructor);
+    gtk_widget_add_events (pt->plugin, GDK_BUTTON_PRESS_MASK);
 
     /* Allocate icon as a child of top level */
-    gtk_container_add (GTK_CONTAINER(p), pt->tray_icon);
+    gtk_container_add (GTK_CONTAINER(pt->plugin), pt->tray_icon);
 
     /* Load the symbols */
     pt->plug = gdk_pixbuf_new_from_file ("/usr/share/lxpanel/images/plug.png", NULL);
     pt->flash = gdk_pixbuf_new_from_file ("/usr/share/lxpanel/images/flash.png", NULL);
 
     /* Show the widget */
-    gtk_widget_show_all (p);
+    gtk_widget_show_all (pt->plugin);
 
-    /* Start timed events to monitor status */
-    pt->timer = g_timeout_add (INTERVAL, (GSourceFunc) timer_event, (gpointer) pt);
+    /* Initialise measurements and check for a battery */
+    if (init_measurement (pt))
+    {
+        /* Start timed events to monitor status */
+        pt->timer = g_timeout_add (INTERVAL, (GSourceFunc) timer_event, (gpointer) pt);
+    }
+    else
+    {
+        gtk_widget_hide_all (pt->plugin);
+        gtk_widget_set_sensitive (pt->plugin, FALSE);
+    }
 
-    return p;
+    return pt->plugin;
 }
 
 FM_DEFINE_MODULE(lxpanel_gtk, ptbatt)

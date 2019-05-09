@@ -1,3 +1,9 @@
+lxplug-ptbatt (0.6) unstable; urgency=medium
+
+  * Don't delete plugin if no battery found - just do nothing with it
+
+ -- Simon Long <simon@raspberrypi.org>  Thu, 09 May 2019 15:21:24 +0100
+
 lxplug-ptbatt (0.5) stretch; urgency=medium
 
   * Remove update timer when plugin is closed
