@@ -330,7 +330,7 @@ static void draw_icon (PtBattPlugin *pt, int lev, float r, float g, float b, int
     g_object_ref_sink (pt->tray_icon);
     gtk_image_set_from_pixbuf (GTK_IMAGE (pt->tray_icon), pixbuf);
 
-    g_object_ref_sink (pixbuf);
+    g_object_unref (pixbuf);
     cairo_destroy (cr);
 }
 
