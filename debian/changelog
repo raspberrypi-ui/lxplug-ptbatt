@@ -1,3 +1,9 @@
+lxplug-ptbatt (0.7) buster; urgency=medium
+
+  * Fix memory leak
+
+ -- Simon Long <simon@raspberrypi.org>  Mon, 09 Sep 2019 08:54:22 +0100
+
 lxplug-ptbatt (0.6) unstable; urgency=medium
 
   * Don't delete plugin if no battery found - just do nothing with it
