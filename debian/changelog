@@ -1,3 +1,9 @@
+lxplug-ptbatt (0.8) buster; urgency=medium
+
+  * Do not read HID batteries
+
+ -- Simon Long <simon@raspberrypi.org>  Tue, 19 Nov 2019 14:52:41 +0000
+
 lxplug-ptbatt (0.7) buster; urgency=medium
 
   * Fix memory leak

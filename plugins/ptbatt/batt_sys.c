@@ -212,6 +212,8 @@ battery* battery_update(battery *b)
         else
             b->state = g_strdup("unavailable");
     }
+    g_free(b->scope);
+    b->scope = get_gchar_from_infofile(b, "scope");
 
 #if 0 /* those conversions might be good for text prints but are pretty wrong for tooltip and calculations */
     /* convert energy values (in mWh) to charge values (in mAh) if needed and possible */
@@ -348,7 +350,7 @@ battery *battery_get(int battery_number) {
         battery_update ( b );
 
         /* We're looking for a battery with the selected ID */
-        if (b->type_battery == TRUE) {
+        if (b->type_battery == TRUE && g_strcmp0 (b->scope, "Device")) {
             break;
         }
         battery_free(b);
