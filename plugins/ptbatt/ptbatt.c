@@ -37,9 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <asm/ioctl.h>
-#ifdef __arm__
 #include <zmq.h>
-#endif
 #include "batt_sys.h"
 
 #include "plugin.h"
@@ -62,11 +60,10 @@ typedef struct {
     GdkPixbuf *plug;
     GdkPixbuf *flash;
     guint timer;
-#ifdef __arm__
     gboolean pt_batt_avail;
     void *context;
     void *requester;
-#endif
+    gboolean ispi;
 } PtBattPlugin;
 
 /* Battery states */
@@ -79,6 +76,14 @@ typedef enum
     STAT_EXT_POWER = 2
 } status_t;
 
+
+static gboolean is_pi (void)
+{
+    if (system ("raspi-config nonint is_pi") == 0)
+        return TRUE;
+    else
+        return FALSE;
+}
 
 /* gdk_pixbuf_get_from_surface function from GDK+3 */
 
@@ -150,32 +155,38 @@ static int init_measurement (PtBattPlugin *pt)
 #ifdef TEST_MODE
     return 1;
 #endif
-#ifdef __arm__
-    pt->pt_batt_avail = FALSE;
-    if (system ("systemctl status pt-device-manager | grep -wq active") == 0)
+    if (pt->ispi)
     {
-        g_message ("pi-top device manager found");
-        pt->pt_batt_avail = TRUE;
-        pt->context = zmq_ctx_new ();
-        if (pt->context)
-        {
-            pt->requester = zmq_socket (pt->context, ZMQ_REQ);
-            if (pt->requester)
-            {
-                if (zmq_connect (pt->requester, "tcp://127.0.0.1:3782") == 0)
-                {
-                    if (zmq_send (pt->requester, "118", 3, ZMQ_NOBLOCK) == 3)
-                    {
-                        g_message ("connected to pi-top device manager");
-                        return 1;
-                    }
-                }
-            }
-        }
         pt->requester = NULL;
-        return 0;
+        pt->context = NULL;
+        pt->pt_batt_avail = FALSE;
+        if (system ("systemctl status pt-device-manager | grep -wq active") == 0)
+        {
+            g_message ("pi-top device manager found");
+            pt->pt_batt_avail = TRUE;
+            pt->context = zmq_ctx_new ();
+            if (pt->context)
+            {
+                pt->requester = zmq_socket (pt->context, ZMQ_REQ);
+                if (pt->requester)
+                {
+                    if (zmq_connect (pt->requester, "tcp://127.0.0.1:3782") == 0)
+                    {
+                        if (zmq_send (pt->requester, "118", 3, ZMQ_NOBLOCK) == 3)
+                        {
+                            g_message ("connected to pi-top device manager");
+                            return 1;
+                        }
+                    }
+                    zmq_close (pt->requester);
+                    pt->requester = NULL;
+                }
+                zmq_ctx_destroy (pt->context);
+                pt->context = NULL;
+            }
+            return 0;
+        }
     }
-#endif
     int val;
     if (config_setting_lookup_int (pt->settings, "BattNum", &val))
         pt->batt = battery_get (val);
@@ -207,35 +218,36 @@ static int charge_level (PtBattPlugin *pt, status_t *status, int *tim)
 #endif
     *status = STAT_UNKNOWN;
     *tim = 0;
-#ifdef __arm__
-    int capacity, state, time, res;
-    char buffer[100];
-
-    if (pt->pt_batt_avail)
+    if (pt->ispi)
     {
-        if (!pt->requester) return -1;
+        int capacity, state, time, res;
+        char buffer[100];
 
-        res = zmq_recv (pt->requester, buffer, 100, ZMQ_NOBLOCK);
-        if (res > 0 && res < 100)
+        if (pt->pt_batt_avail)
         {
-            buffer[res] = 0;
-            if (sscanf (buffer, "%d|%d|%d|%d|", &res, &state, &capacity, &time) == 4)
+            if (!pt->requester) return -1;
+
+            res = zmq_recv (pt->requester, buffer, 100, ZMQ_NOBLOCK);
+            if (res > 0 && res < 100)
             {
-                if (res == 218 && (state == STAT_CHARGING || state == STAT_DISCHARGING || state == STAT_EXT_POWER))
+                buffer[res] = 0;
+                if (sscanf (buffer, "%d|%d|%d|%d|", &res, &state, &capacity, &time) == 4)
                 {
-                    // these two lines shouldn't be necessary once EXT_POWER state is implemented in the device manager
-                    if (capacity == 100 && time == 0) *status = STAT_EXT_POWER;
-                    else
-                    *status = (status_t) state;
-                    *tim = time;
+                    if (res == 218 && (state == STAT_CHARGING || state == STAT_DISCHARGING || state == STAT_EXT_POWER))
+                    {
+                        // these two lines shouldn't be necessary once EXT_POWER state is implemented in the device manager
+                        if (capacity == 100 && time == 0) *status = STAT_EXT_POWER;
+                        else
+                        *status = (status_t) state;
+                        *tim = time;
+                    }
                 }
             }
+            zmq_send (pt->requester, "118", 3, ZMQ_NOBLOCK);
+            if (*status != STAT_UNKNOWN) return capacity;
+            else return -1;
         }
-        zmq_send (pt->requester, "118", 3, ZMQ_NOBLOCK);
-        if (*status != STAT_UNKNOWN) return capacity;
-        else return -1;
     }
-#endif
     battery *b = pt->batt;
     int mins;
     if (b)
@@ -415,10 +427,11 @@ static void ptbatt_destructor (gpointer user_data)
     /* Disconnect the timer. */
     g_source_remove (pt->timer);
 
-#ifdef __arm__
-    zmq_close (pt->requester);
-    zmq_ctx_destroy (pt->context);
-#endif
+    if (pt->ispi)
+    {
+        if (pt->requester) zmq_close (pt->requester);
+        if (pt->context) zmq_ctx_destroy (pt->context);
+    }
 
     /* Deallocate memory */
     g_free (pt);
@@ -437,6 +450,7 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
     textdomain ( GETTEXT_PACKAGE );
 #endif
 
+    pt->ispi = is_pi ();
     pt->tray_icon = gtk_image_new ();
     gtk_widget_set_visible (pt->tray_icon, TRUE);
 
