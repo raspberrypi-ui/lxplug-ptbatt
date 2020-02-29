@@ -11,6 +11,6 @@ Homepage: http://raspberrypi.org/
 Package: lxplug-ptbatt
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}, lxmenu-data,
- lxpanel, lxpanel-data, libfm-modules, libzmq5
+ lxpanel, lxpanel-data, libfm-modules, libzmq5, raspi-config
 Description: Battery monitor plugin for lxpanel
  Battery indicator plugin for lxpanel, for PiTop.
