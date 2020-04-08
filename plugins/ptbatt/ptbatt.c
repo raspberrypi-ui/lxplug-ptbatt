@@ -355,6 +355,8 @@ static void update_icon (PtBattPlugin *pt)
     float ftime;
     char str[255];
 
+    if (!pt->timer) return;
+
     // read the charge status
     capacity = charge_level (pt, &status, &time);
     if (status == STAT_UNKNOWN) return;
@@ -425,7 +427,7 @@ static void ptbatt_destructor (gpointer user_data)
     PtBattPlugin *pt = (PtBattPlugin *) user_data;
 
     /* Disconnect the timer. */
-    g_source_remove (pt->timer);
+    if (pt->timer) g_source_remove (pt->timer);
 
     if (pt->ispi)
     {
@@ -442,6 +444,8 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
 {
     /* Allocate and initialize plugin context */
     PtBattPlugin *pt = g_new0 (PtBattPlugin, 1);
+    pt->panel = panel;
+    pt->settings = settings;
 
 #ifdef ENABLE_NLS
     setlocale (LC_ALL, "");
@@ -451,40 +455,35 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
 #endif
 
     pt->ispi = is_pi ();
-    pt->tray_icon = gtk_image_new ();
-    gtk_widget_set_visible (pt->tray_icon, TRUE);
 
-    /* Allocate top level widget and set into Plugin widget pointer. */
-    pt->panel = panel;
-    pt->plugin = gtk_button_new ();
-    gtk_button_set_relief (GTK_BUTTON (pt->plugin), GTK_RELIEF_NONE);
-    g_signal_connect (pt->plugin, "button-press-event", G_CALLBACK(ptbatt_button_press_event), NULL);
-    pt->settings = settings;
-    lxpanel_plugin_set_data (pt->plugin, pt, ptbatt_destructor);
-    gtk_widget_add_events (pt->plugin, GDK_BUTTON_PRESS_MASK);
-
-    /* Allocate icon as a child of top level */
-    gtk_container_add (GTK_CONTAINER(pt->plugin), pt->tray_icon);
-
-    /* Load the symbols */
-    pt->plug = gdk_pixbuf_new_from_file ("/usr/share/lxpanel/images/plug.png", NULL);
-    pt->flash = gdk_pixbuf_new_from_file ("/usr/share/lxpanel/images/flash.png", NULL);
-
-    /* Show the widget */
-    gtk_widget_show_all (pt->plugin);
-
-    /* Initialise measurements and check for a battery */
     if (init_measurement (pt))
     {
+        /* Allocate top level widget and set into Plugin widget pointer. */
+        pt->plugin = gtk_button_new ();
+        gtk_button_set_relief (GTK_BUTTON (pt->plugin), GTK_RELIEF_NONE);
+        g_signal_connect (pt->plugin, "button-press-event", G_CALLBACK(ptbatt_button_press_event), NULL);
+        gtk_widget_add_events (pt->plugin, GDK_BUTTON_PRESS_MASK);
+
+        /* Allocate icon as a child of top level */
+        pt->tray_icon = gtk_image_new ();
+        gtk_widget_set_visible (pt->tray_icon, TRUE);
+        gtk_container_add (GTK_CONTAINER (pt->plugin), pt->tray_icon);
+
+        /* Load the symbols */
+        pt->plug = gdk_pixbuf_new_from_file ("/usr/share/lxpanel/images/plug.png", NULL);
+        pt->flash = gdk_pixbuf_new_from_file ("/usr/share/lxpanel/images/flash.png", NULL);
+
         /* Start timed events to monitor status */
         pt->timer = g_timeout_add (INTERVAL, (GSourceFunc) timer_event, (gpointer) pt);
     }
     else
     {
-        gtk_widget_hide_all (pt->plugin);
-        gtk_widget_set_sensitive (pt->plugin, FALSE);
+        pt->timer = 0;
+        /* a NULL label has a width of zero; unlike an empty button... */
+        pt->plugin = gtk_label_new (NULL);
     }
 
+    lxpanel_plugin_set_data (pt->plugin, pt, ptbatt_destructor);
     return pt->plugin;
 }
 
