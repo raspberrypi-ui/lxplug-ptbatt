@@ -157,13 +157,13 @@ static int init_measurement (PtBattPlugin *pt)
 #endif
     if (pt->ispi)
     {
+        pt->pt_batt_avail = FALSE;
         pt->requester = NULL;
         pt->context = NULL;
         pt->pt_batt_avail = FALSE;
         if (system ("systemctl status pt-device-manager | grep -wq active") == 0)
         {
             g_message ("pi-top device manager found");
-            pt->pt_batt_avail = TRUE;
             pt->context = zmq_ctx_new ();
             if (pt->context)
             {
@@ -175,6 +175,7 @@ static int init_measurement (PtBattPlugin *pt)
                         if (zmq_send (pt->requester, "118", 3, ZMQ_NOBLOCK) == 3)
                         {
                             g_message ("connected to pi-top device manager");
+                            pt->pt_batt_avail = TRUE;
                             return 1;
                         }
                     }
@@ -449,9 +450,9 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
 
 #ifdef ENABLE_NLS
     setlocale (LC_ALL, "");
-    bindtextdomain ( GETTEXT_PACKAGE, PACKAGE_LOCALE_DIR );
-    bind_textdomain_codeset ( GETTEXT_PACKAGE, "UTF-8" );
-    textdomain ( GETTEXT_PACKAGE );
+    bindtextdomain (GETTEXT_PACKAGE, PACKAGE_LOCALE_DIR);
+    bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
+    textdomain (GETTEXT_PACKAGE);
 #endif
 
     pt->ispi = is_pi ();
@@ -461,7 +462,7 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
         /* Allocate top level widget and set into Plugin widget pointer. */
         pt->plugin = gtk_button_new ();
         gtk_button_set_relief (GTK_BUTTON (pt->plugin), GTK_RELIEF_NONE);
-        g_signal_connect (pt->plugin, "button-press-event", G_CALLBACK(ptbatt_button_press_event), NULL);
+        g_signal_connect (pt->plugin, "button-press-event", G_CALLBACK (ptbatt_button_press_event), NULL);
         gtk_widget_add_events (pt->plugin, GDK_BUTTON_PRESS_MASK);
 
         /* Allocate icon as a child of top level */
