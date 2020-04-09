@@ -403,18 +403,6 @@ static gboolean timer_event (PtBattPlugin *pt)
 
 /* Plugin functions */
 
-/* Handler for menu button click */
-static gboolean ptbatt_button_press_event (GtkWidget *widget, GdkEventButton *event, LXPanel *panel)
-{
-    PtBattPlugin *pt = lxpanel_plugin_get_data (widget);
-
-#ifdef ENABLE_NLS
-    textdomain ( GETTEXT_PACKAGE );
-#endif
-
-    return FALSE;
-}
-
 /* Handler for system config changed message from panel */
 static void ptbatt_configuration_changed (LXPanel *panel, GtkWidget *p)
 {
@@ -460,10 +448,7 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
     if (init_measurement (pt))
     {
         /* Allocate top level widget and set into Plugin widget pointer. */
-        pt->plugin = gtk_button_new ();
-        gtk_button_set_relief (GTK_BUTTON (pt->plugin), GTK_RELIEF_NONE);
-        g_signal_connect (pt->plugin, "button-press-event", G_CALLBACK (ptbatt_button_press_event), NULL);
-        gtk_widget_add_events (pt->plugin, GDK_BUTTON_PRESS_MASK);
+        pt->plugin = gtk_hbox_new (FALSE, 0);
 
         /* Allocate icon as a child of top level */
         pt->tray_icon = gtk_image_new ();
@@ -496,6 +481,5 @@ LXPanelPluginInit fm_module_init_lxpanel_gtk = {
     .description = N_("Monitors battery for pi-top and laptops"),
     .new_instance = ptbatt_constructor,
     .reconfigure = ptbatt_configuration_changed,
-    .button_press_event = ptbatt_button_press_event,
     .gettext_package = GETTEXT_PACKAGE
 };
