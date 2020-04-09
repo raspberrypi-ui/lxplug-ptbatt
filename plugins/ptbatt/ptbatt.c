@@ -448,7 +448,7 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
     if (init_measurement (pt))
     {
         /* Allocate top level widget and set into Plugin widget pointer. */
-        pt->plugin = gtk_hbox_new (FALSE, 0);
+        pt->plugin = gtk_event_box_new ();
 
         /* Allocate icon as a child of top level */
         pt->tray_icon = gtk_image_new ();
