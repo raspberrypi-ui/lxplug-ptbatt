@@ -670,8 +670,8 @@ FM_DEFINE_MODULE(lxpanel_gtk, ptbatt)
 
 /* Plugin descriptor. */
 LXPanelPluginInit fm_module_init_lxpanel_gtk = {
-    .name = N_("Battery (pi-top / laptop)"),
-    .description = N_("Monitors battery for pi-top and laptops"),
+    .name = N_("Power & Battery"),
+    .description = N_("Monitors voltage and laptop battery"),
     .new_instance = ptbatt_constructor,
     .reconfigure = ptbatt_configuration_changed,
     .gettext_package = GETTEXT_PACKAGE
