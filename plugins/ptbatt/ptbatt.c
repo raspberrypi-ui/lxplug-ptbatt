@@ -49,6 +49,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define INTERVAL 5000
 #endif
 
+#define VMON_INTERVAL 15000
+#define VMON_PATH "/sys/devices/platform/soc/soc:firmware/raspberrypi-hwmon/hwmon/hwmon1/in0_lcrit_alarm"
+
 /* Plug-in global data */
 
 typedef struct {
@@ -63,6 +66,7 @@ typedef struct {
     GtkWidget *alignment;           /* Alignment object in popup message */
     GtkWidget *box;                 /* Vbox in popup message */
     guint timer;
+    guint vtimer;
     gboolean pt_batt_avail;
     void *context;
     void *requester;
@@ -206,7 +210,7 @@ static gboolean gtk_tooltip_paint_window (PtBattPlugin *pt)
 
 static gboolean ptbatt_mouse_out (GtkWidget *widget, GdkEventButton *event, PtBattPlugin *pt)
 {
-    gtk_widget_hide (pt->popup);
+    hide_message (pt);
     gdk_pointer_ungrab (GDK_CURRENT_TIME);
     return FALSE;
 }
@@ -216,7 +220,7 @@ static void show_message (PtBattPlugin *pt, char *str1, char *str2)
     GtkWidget *item;
     gint x, y;
 
-    hide_message (pt);
+    if (pt->popup) return;
 
     pt->popup = gtk_window_new (GTK_WINDOW_POPUP);
     on_screen_changed (pt->popup);
@@ -242,7 +246,7 @@ static void show_message (PtBattPlugin *pt, char *str1, char *str2)
 
     gtk_widget_show_all (pt->popup);
     gtk_widget_hide (pt->popup);
-    lxpanel_plugin_popup_set_position_helper (pt->panel, pt->tray_icon, pt->popup, &x, &y);
+    lxpanel_plugin_popup_set_position_helper (pt->panel, pt->plugin, pt->popup, &x, &y);
     gdk_window_move (gtk_widget_get_window (pt->popup), x, y);
     gtk_window_present (GTK_WINDOW (pt->popup));
     gdk_pointer_grab (gtk_widget_get_window (pt->popup), TRUE, GDK_BUTTON_PRESS_MASK, NULL, NULL, GDK_CURRENT_TIME);
@@ -574,6 +578,19 @@ static gboolean timer_event (PtBattPlugin *pt)
     return TRUE;
 }
 
+static gboolean vtimer_event (PtBattPlugin *pt)
+{
+    FILE *fp = fopen (VMON_PATH, "rb");
+    if (fp)
+    {
+        int val = fgetc (fp);
+        fclose (fp);
+        if (val == '1')
+            show_message (pt, _("Low voltage warning"), _("Please check your power supply"));
+    }
+    return TRUE;
+}
+
 /* Plugin functions */
 
 /* Handler for system config changed message from panel */
@@ -641,6 +658,9 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
         /* a NULL label has a width of zero; unlike an empty button... */
         pt->plugin = gtk_label_new (NULL);
     }
+
+    /* Start timed events to monitor low voltage warnings */
+    if (pt->ispi) pt->vtimer = g_timeout_add (VMON_INTERVAL, (GSourceFunc) vtimer_event, (gpointer) pt);
 
     lxpanel_plugin_set_data (pt->plugin, pt, ptbatt_destructor);
     return pt->plugin;
