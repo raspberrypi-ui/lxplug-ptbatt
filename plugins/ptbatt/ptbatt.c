@@ -52,8 +52,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define VMON_INTERVAL 15000
 #define VMON_PATH "/sys/devices/platform/soc/soc:firmware/raspberrypi-hwmon/hwmon/hwmon1/in0_lcrit_alarm"
 
-//#define CLICKON
-
 /* Plug-in global data */
 
 typedef struct {
@@ -67,9 +65,6 @@ typedef struct {
     GtkWidget *popup;               /* Popup message */
     GtkWidget *alignment;           /* Alignment object in popup message */
     GtkWidget *box;                 /* Vbox in popup message */
-#ifdef CLICKON
-    GtkWidget *evbox;
-#endif
     guint timer;
     guint vtimer;
     gboolean pt_batt_avail;
@@ -95,7 +90,7 @@ static void draw_round_rect (cairo_t *cr, gdouble aspect, gdouble x, gdouble y, 
 static void fill_background (GtkWidget *widget, cairo_t *cr, GdkColor *bg_color, GdkColor *border_color, guchar alpha);
 static void update_shape (PtBattPlugin *pt);
 static gboolean gtk_tooltip_paint_window (PtBattPlugin *pt);
-static gboolean ptbatt_mouse_out (GtkWidget * widget, GdkEventButton * event, PtBattPlugin *pt);
+static gboolean ptbatt_window_click (GtkWidget * widget, GdkEventButton * event, PtBattPlugin *pt);
 static void show_message (PtBattPlugin *pt, char *str1, char *str2);
 static void hide_message (PtBattPlugin *pt);
 
@@ -213,12 +208,9 @@ static gboolean gtk_tooltip_paint_window (PtBattPlugin *pt)
     return FALSE;
 }
 
-static gboolean ptbatt_mouse_out (GtkWidget *widget, GdkEventButton *event, PtBattPlugin *pt)
+static gboolean ptbatt_window_click (GtkWidget *widget, GdkEventButton *event, PtBattPlugin *pt)
 {
     hide_message (pt);
-#ifndef CLICKON
-    gdk_pointer_ungrab (GDK_CURRENT_TIME);
-#endif
     return FALSE;
 }
 
@@ -237,13 +229,7 @@ static void show_message (PtBattPlugin *pt, char *str1, char *str2)
     gtk_widget_set_name (pt->popup, "gtk-tooltip");
 
     pt->alignment = gtk_alignment_new (0.5, 0.5, 1.0, 1.0);
-#ifdef CLICKON
-    pt->evbox = gtk_event_box_new ();
-    gtk_container_add (GTK_CONTAINER (pt->popup), pt->evbox);
-    gtk_container_add (GTK_CONTAINER (pt->evbox), pt->alignment);
-#else
     gtk_container_add (GTK_CONTAINER (pt->popup), pt->alignment);
-#endif
     gtk_widget_show (pt->alignment);
 
     g_signal_connect_swapped (pt->popup, "style-set", G_CALLBACK (gtk_tooltip_window_style_set), pt);
@@ -261,13 +247,9 @@ static void show_message (PtBattPlugin *pt, char *str1, char *str2)
     gtk_widget_hide (pt->popup);
     lxpanel_plugin_popup_set_position_helper (pt->panel, pt->plugin, pt->popup, &x, &y);
     gdk_window_move (gtk_widget_get_window (pt->popup), x, y);
+    gdk_window_set_events (gtk_widget_get_window (pt->popup), gdk_window_get_events (gtk_widget_get_window (pt->popup)) | GDK_BUTTON_PRESS_MASK);
+    g_signal_connect (G_OBJECT(pt->popup), "button-press-event", G_CALLBACK (ptbatt_window_click), pt);
     gtk_window_present (GTK_WINDOW (pt->popup));
-#ifdef CLICKON
-    g_signal_connect (G_OBJECT (pt->evbox), "button-press-event", G_CALLBACK (ptbatt_mouse_out), pt);
-#else
-    gdk_pointer_grab (gtk_widget_get_window (pt->popup), TRUE, GDK_BUTTON_PRESS_MASK, NULL, NULL, GDK_CURRENT_TIME);
-    g_signal_connect (G_OBJECT(pt->popup), "button-press-event", G_CALLBACK (ptbatt_mouse_out), pt);
-#endif
 }
 
 static void hide_message (PtBattPlugin *pt)
