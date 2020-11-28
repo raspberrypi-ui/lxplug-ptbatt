@@ -1,0 +1,90 @@
+# Slovak translations for lxplug_ptbatt package.
+# Copyright (C) 2017 Raspberry Pi
+# This file is distributed under the same license as the lxplug_ptbatt package.
+# Jose Riha <jose 1711 gmail com>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: lxplug_ptbatt 0.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-09-17 16:09+0100\n"
+"PO-Revision-Date: 2020-11-28 17:51+0100\n"
+"Last-Translator: Jose Riha <jose1711@gmail.com>\n"
+"Language-Team: Slovak\n"
+"Language: sk\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 1 : (n>=2 && n<=4) ? 2 : 0;\n"
+"X-Generator: Poedit 2.4.1\n"
+
+#: ../plugins/ptbatt/ptbatt.c:547
+#, c-format
+msgid "Charging : %d%%"
+msgstr "Nabíjanie: %d%%"
+
+#: ../plugins/ptbatt/ptbatt.c:549
+#, c-format
+msgid ""
+"Charging : %d%%\n"
+"Time remaining : %d minutes"
+msgstr ""
+"Nabíjanie: %d%%\n"
+"Zostávajúci čas: %d minút(y)"
+
+#: ../plugins/ptbatt/ptbatt.c:551
+#, c-format
+msgid ""
+"Charging : %d%%\n"
+"Time remaining : %0.1f hours"
+msgstr ""
+"Nabíjanie: %d%%\n"
+"Zostávajúci čas: %0.1f hodín(y)"
+
+#: ../plugins/ptbatt/ptbatt.c:556
+#, c-format
+msgid ""
+"Charged : %d%%\n"
+"On external power"
+msgstr ""
+"Nabitý: %d%%\n"
+"Na externom napájaní"
+
+#: ../plugins/ptbatt/ptbatt.c:562
+#, c-format
+msgid "Discharging : %d%%"
+msgstr "Vybíjanie: %d%%"
+
+#: ../plugins/ptbatt/ptbatt.c:564
+#, c-format
+msgid ""
+"Discharging : %d%%\n"
+"Time remaining : %d minutes"
+msgstr ""
+"Vybíjanie: %d%%\n"
+"Zostávajúci čas: %d minút(y)"
+
+#: ../plugins/ptbatt/ptbatt.c:566
+#, c-format
+msgid ""
+"Discharging : %d%%\n"
+"Time remaining : %0.1f hours"
+msgstr ""
+"Vybíjanie: %d%%\n"
+"Zostávajúci čas: %0.1f hodín(y)"
+
+#: ../plugins/ptbatt/ptbatt.c:589
+msgid "Low voltage warning"
+msgstr "Upozornenie na nízke napätie"
+
+#: ../plugins/ptbatt/ptbatt.c:589
+msgid "Please check your power supply"
+msgstr "Skontrolujte, prosím, zdroj napätia"
+
+#: ../plugins/ptbatt/ptbatt.c:673
+msgid "Power & Battery"
+msgstr "Napájanie a batéria"
+
+#: ../plugins/ptbatt/ptbatt.c:674
+msgid "Monitors voltage and laptop battery"
+msgstr "Sleduje napätie a batériu notebooku"
