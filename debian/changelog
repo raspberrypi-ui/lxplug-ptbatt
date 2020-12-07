@@ -1,3 +1,9 @@
+lxplug-ptbatt (0.13) buster; urgency=medium
+
+  * Added Slovak translation
+
+ -- Simon Long <simon@raspberrypi.com>  Mon, 07 Dec 2020 08:02:04 +0000
+
 lxplug-ptbatt (0.12) buster; urgency=medium
 
   * Add low voltage warning popup
