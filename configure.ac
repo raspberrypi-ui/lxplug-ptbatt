@@ -42,12 +42,8 @@ fi
 
 pkg_modules="$pkg_modules \
              gthread-2.0 \
-             gmodule-2.0"
-
-case "$host_cpu" in
-    *arm*) pkg_modules="$pkg_modules \
-             libzmq" ;;
-esac
+             gmodule-2.0 \
+             libzmq"
 
 PKG_CHECK_MODULES(PACKAGE, [$pkg_modules])
 AC_SUBST(PACKAGE_CFLAGS)
