@@ -104,7 +104,7 @@ static gboolean is_pi (void)
 
 /* The functions below are a copy of those in GTK+2.0's gtktooltip.c, as for some reason, you cannot */
 /* manually cause a tooltip to appear with a simple function call. I have no idea why not... */
-
+#if 0
 static void on_screen_changed (GtkWidget *window)
 {
 	GdkScreen *screen;
@@ -207,6 +207,7 @@ static gboolean gtk_tooltip_paint_window (PtBattPlugin *pt)
 
     return FALSE;
 }
+#endif
 
 static gboolean ptbatt_window_click (GtkWidget *widget, GdkEventButton *event, PtBattPlugin *pt)
 {
@@ -222,7 +223,7 @@ static void show_message (PtBattPlugin *pt, char *str1, char *str2)
     if (pt->popup) return;
 
     pt->popup = gtk_window_new (GTK_WINDOW_POPUP);
-    on_screen_changed (pt->popup);
+    //on_screen_changed (pt->popup);
     gtk_window_set_type_hint (GTK_WINDOW (pt->popup), GDK_WINDOW_TYPE_HINT_TOOLTIP);
     gtk_widget_set_app_paintable (pt->popup, TRUE);
     gtk_window_set_resizable (GTK_WINDOW (pt->popup), FALSE);
@@ -232,10 +233,11 @@ static void show_message (PtBattPlugin *pt, char *str1, char *str2)
     gtk_container_add (GTK_CONTAINER (pt->popup), pt->alignment);
     gtk_widget_show (pt->alignment);
 
-    g_signal_connect_swapped (pt->popup, "style-set", G_CALLBACK (gtk_tooltip_window_style_set), pt);
-    g_signal_connect_swapped (pt->popup, "expose-event", G_CALLBACK (gtk_tooltip_paint_window), pt);
+    //g_signal_connect_swapped (pt->popup, "style-set", G_CALLBACK (gtk_tooltip_window_style_set), pt);
+    //g_signal_connect_swapped (pt->popup, "expose-event", G_CALLBACK (gtk_tooltip_paint_window), pt);
 
-    pt->box = gtk_vbox_new (FALSE, pt->popup->style->xthickness);
+    //pt->box = gtk_vbox_new (FALSE, pt->popup->style->xthickness);
+    pt->box = gtk_vbox_new (FALSE, 5);
     gtk_container_add (GTK_CONTAINER (pt->alignment), pt->box);
 
     item = gtk_label_new (str1);
