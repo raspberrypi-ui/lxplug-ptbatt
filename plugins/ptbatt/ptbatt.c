@@ -223,27 +223,27 @@ static void show_message (PtBattPlugin *pt, char *str1, char *str2)
     if (pt->popup) return;
 
     pt->popup = gtk_window_new (GTK_WINDOW_POPUP);
-#if !GTK_CHECK_VERSION(3, 0, 0)
-    on_screen_changed (pt->popup);
-#endif
     gtk_window_set_type_hint (GTK_WINDOW (pt->popup), GDK_WINDOW_TYPE_HINT_TOOLTIP);
-    gtk_widget_set_app_paintable (pt->popup, TRUE);
     gtk_window_set_resizable (GTK_WINDOW (pt->popup), FALSE);
+
+#if GTK_CHECK_VERSION(3, 0, 0)
+    GtkStyleContext *context = gtk_widget_get_style_context (pt->popup);
+    gtk_style_context_add_class (context, GTK_STYLE_CLASS_TOOLTIP);
+
+    pt->box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 5);
+    gtk_container_add (GTK_CONTAINER (pt->popup), pt->box);
+#else
+    on_screen_changed (pt->popup);
+    gtk_widget_set_app_paintable (pt->popup, TRUE);
     gtk_widget_set_name (pt->popup, "gtk-tooltip");
 
-#if !GTK_CHECK_VERSION(3, 0, 0)
     pt->alignment = gtk_alignment_new (0.5, 0.5, 1.0, 1.0);
     gtk_container_add (GTK_CONTAINER (pt->popup), pt->alignment);
     gtk_widget_show (pt->alignment);
 
     g_signal_connect_swapped (pt->popup, "style-set", G_CALLBACK (gtk_tooltip_window_style_set), pt);
     g_signal_connect_swapped (pt->popup, "expose-event", G_CALLBACK (gtk_tooltip_paint_window), pt);
-#endif
 
-#if GTK_CHECK_VERSION(3, 0, 0)
-    pt->box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 5);
-    gtk_container_add (GTK_CONTAINER (pt->popup), pt->box);
-#else
     pt->box = gtk_vbox_new (FALSE, pt->popup->style->xthickness);
     gtk_container_add (GTK_CONTAINER (pt->alignment), pt->box);
 #endif
