@@ -222,18 +222,17 @@ static void show_message (PtBattPlugin *pt, char *str1, char *str2)
 
     if (pt->popup) return;
 
-    pt->popup = gtk_window_new (GTK_WINDOW_POPUP);
-    gtk_window_set_type_hint (GTK_WINDOW (pt->popup), GDK_WINDOW_TYPE_HINT_TOOLTIP);
-    gtk_window_set_resizable (GTK_WINDOW (pt->popup), FALSE);
-
     /*
      * In order to get a window which looks exactly like a system tooltip, client-side decoration
      * must be requested for it. This cannot be done by any public API call in GTK+3.24, but there is an
      * internal call _gtk_window_request_csd which sets the csd_requested flag in the class' private data.
-     * If an identical function is added as a public API call and invoked here, then windows look correct...
-     *
-     * gtk_window_request_csd (GTK_WINDOW (ej->popup));
+     * The code below is compatible with a hacked GTK+3 library which uses GTK_WINDOW_POPUP + 1 as the type
+     * for a window with CSD requested. It should also not fall over with the standard library...
      */
+    pt->popup = gtk_window_new (GTK_WINDOW_POPUP + 1);
+    if (!pt->popup) pt->popup = gtk_window_new (GTK_WINDOW_POPUP);
+    gtk_window_set_type_hint (GTK_WINDOW (pt->popup), GDK_WINDOW_TYPE_HINT_TOOLTIP);
+    gtk_window_set_resizable (GTK_WINDOW (pt->popup), FALSE);
 
 #if GTK_CHECK_VERSION(3, 0, 0)
     GtkStyleContext *context = gtk_widget_get_style_context (pt->popup);
