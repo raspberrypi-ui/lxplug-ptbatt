@@ -1,3 +1,9 @@
+lxplug-ptbatt (0.15) buster; urgency=medium
+
+  * GTK+3 version
+
+ -- Simon Long <simon@raspberrypi.com>  Fri, 26 Mar 2021 13:30:28 +0000
+
 lxplug-ptbatt (0.14) buster; urgency=medium
 
   * Fix missing library on x86
