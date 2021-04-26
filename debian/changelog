@@ -1,3 +1,9 @@
+lxplug-ptbatt (0.16) bullseye; urgency=medium
+
+  * Added Armenian translation
+
+ -- Simon Long <simon@raspberrypi.com>  Mon, 26 Apr 2021 08:41:28 +0100
+
 lxplug-ptbatt (0.15) bullseye; urgency=medium
 
   * GTK+3 version
