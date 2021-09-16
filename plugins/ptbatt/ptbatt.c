@@ -85,14 +85,16 @@ typedef enum
 
 /* Prototypes */
 
-static void gtk_tooltip_window_style_set (PtBattPlugin *pt);
-static void draw_round_rect (cairo_t *cr, gdouble aspect, gdouble x, gdouble y, gdouble corner_radius, gdouble width, gdouble height);
-static void fill_background (GtkWidget *widget, cairo_t *cr, GdkColor *bg_color, GdkColor *border_color, guchar alpha);
-static void update_shape (PtBattPlugin *pt);
-static gboolean gtk_tooltip_paint_window (PtBattPlugin *pt);
-static gboolean ptbatt_window_click (GtkWidget * widget, GdkEventButton * event, PtBattPlugin *pt);
-static void show_message (PtBattPlugin *pt, char *str1, char *str2);
-static void hide_message (PtBattPlugin *pt);
+static gboolean is_pi (void);
+static void convert_alpha (guchar *dest_data, int dest_stride, guchar *src_data, int src_stride, int src_x, int src_y, int width, int height);
+GdkPixbuf *gdk_pixbuf_get_from_surface (cairo_surface_t *surface, gint src_x, gint src_y, gint width, gint height);
+static int init_measurement (PtBattPlugin *pt);
+static int charge_level (PtBattPlugin *pt, status_t *status, int *tim);
+static void draw_icon (PtBattPlugin *pt, int lev, float r, float g, float b, int powered);
+static void update_icon (PtBattPlugin *pt);
+static gboolean timer_event (PtBattPlugin *pt);
+static gboolean vtimer_event (PtBattPlugin *pt);
+
 
 static gboolean is_pi (void)
 {
@@ -100,183 +102,6 @@ static gboolean is_pi (void)
         return TRUE;
     else
         return FALSE;
-}
-
-/* The functions below are a copy of those in GTK+2.0's gtktooltip.c, as for some reason, you cannot */
-/* manually cause a tooltip to appear with a simple function call. I have no idea why not... */
-#if !GTK_CHECK_VERSION(3, 0, 0)
-static void on_screen_changed (GtkWidget *window)
-{
-	GdkScreen *screen;
-	GdkColormap *cmap;
-
-	screen = gtk_widget_get_screen (window);
-	cmap = NULL;
-	if (gdk_screen_is_composited (screen)) cmap = gdk_screen_get_rgba_colormap (screen);
-	if (cmap == NULL) cmap = gdk_screen_get_rgb_colormap (screen);
-
-	gtk_widget_set_colormap (window, cmap);
-}
-
-static void gtk_tooltip_window_style_set (PtBattPlugin *pt)
-{
-    gtk_alignment_set_padding (GTK_ALIGNMENT (pt->alignment), pt->popup->style->ythickness, pt->popup->style->ythickness,
-        pt->popup->style->xthickness, pt->popup->style->xthickness);
-    gtk_box_set_spacing (GTK_BOX (pt->box), pt->popup->style->xthickness);
-    gtk_widget_queue_draw (pt->popup);
-}
-
-static void draw_round_rect (cairo_t *cr, gdouble aspect, gdouble x, gdouble y, gdouble corner_radius, gdouble width, gdouble height)
-{
-    gdouble radius = corner_radius / aspect;
-    cairo_move_to (cr, x + radius, y);
-    cairo_line_to (cr, x + width - radius, y);
-    cairo_arc (cr, x + width - radius, y + radius, radius, -90.0f * G_PI / 180.0f, 0.0f * G_PI / 180.0f);
-    cairo_line_to (cr, x + width, y + height - radius);
-    cairo_arc (cr, x + width - radius, y + height - radius, radius, 0.0f * G_PI / 180.0f, 90.0f * G_PI / 180.0f);
-    cairo_line_to (cr, x + radius, y + height);
-    cairo_arc (cr, x + radius, y + height - radius, radius,  90.0f * G_PI / 180.0f, 180.0f * G_PI / 180.0f);
-    cairo_line_to (cr, x, y + radius);
-    cairo_arc (cr, x + radius, y + radius, radius, 180.0f * G_PI / 180.0f, 270.0f * G_PI / 180.0f);
-    cairo_close_path (cr);
-}
-
-static void fill_background (GtkWidget *widget, cairo_t *cr, GdkColor *bg_color, GdkColor *border_color, guchar alpha)
-{
-    gint tooltip_radius;
-
-    if (!gtk_widget_is_composited (widget)) alpha = 255;
-
-    gtk_widget_style_get (widget, "tooltip-radius", &tooltip_radius,  NULL);
-
-    cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
-    cairo_paint (cr);
-    cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
-
-    draw_round_rect (cr, 1.0, 0.5, 0.5, tooltip_radius, widget->allocation.width - 1,  widget->allocation.height - 1);
-
-    cairo_set_source_rgba (cr, (float) bg_color->red / 65535.0, (float) bg_color->green / 65535.0, (float) bg_color->blue / 65535.0, (float) alpha / 255.0);
-    cairo_fill_preserve (cr);
-
-    cairo_set_source_rgba (cr, (float) border_color->red / 65535.0, (float) border_color->green / 65535.0, (float) border_color->blue / 65535.0, (float) alpha / 255.0);
-    cairo_set_line_width (cr, 1.0);
-    cairo_stroke (cr);
-}
-
-static void update_shape (PtBattPlugin *pt)
-{
-    GdkBitmap *mask;
-    cairo_t *cr;
-    gint width, height, tooltip_radius;
-
-    gtk_widget_style_get (pt->popup, "tooltip-radius", &tooltip_radius, NULL);
-
-    if (tooltip_radius == 0 || gtk_widget_is_composited (pt->popup))
-    {
-        gtk_widget_shape_combine_mask (pt->popup, NULL, 0, 0);
-        return;
-    }
-
-    gtk_window_get_size (GTK_WINDOW (pt->popup), &width, &height);
-    mask = (GdkBitmap *) gdk_pixmap_new (NULL, width, height, 1);
-    cr = gdk_cairo_create (mask);
-
-    fill_background (pt->popup, cr, &pt->popup->style->black, &pt->popup->style->black, 255);
-    gtk_widget_shape_combine_mask (pt->popup, mask, 0, 0);
-
-    cairo_destroy (cr);
-    g_object_unref (mask);
-}
-
-static gboolean gtk_tooltip_paint_window (PtBattPlugin *pt)
-{
-    guchar tooltip_alpha;
-    gint tooltip_radius;
-
-    gtk_widget_style_get (pt->popup, "tooltip-alpha", &tooltip_alpha, "tooltip-radius", &tooltip_radius, NULL);
-
-    if (tooltip_alpha != 255 || tooltip_radius != 0)
-    {
-        cairo_t *cr = gdk_cairo_create (pt->popup->window);
-        fill_background (pt->popup, cr, &pt->popup->style->bg [GTK_STATE_NORMAL], &pt->popup->style->bg [GTK_STATE_SELECTED], tooltip_alpha);
-        cairo_destroy (cr);
-        update_shape (pt);
-    }
-    else gtk_paint_flat_box (pt->popup->style, pt->popup->window, GTK_STATE_NORMAL, GTK_SHADOW_OUT, NULL, pt->popup, "tooltip",
-        0, 0, pt->popup->allocation.width, pt->popup->allocation.height);
-
-    return FALSE;
-}
-#endif
-
-static gboolean ptbatt_window_click (GtkWidget *widget, GdkEventButton *event, PtBattPlugin *pt)
-{
-    hide_message (pt);
-    return FALSE;
-}
-
-static void show_message (PtBattPlugin *pt, char *str1, char *str2)
-{
-    GtkWidget *item;
-    gint x, y;
-
-    if (pt->popup) return;
-
-    /*
-     * In order to get a window which looks exactly like a system tooltip, client-side decoration
-     * must be requested for it. This cannot be done by any public API call in GTK+3.24, but there is an
-     * internal call _gtk_window_request_csd which sets the csd_requested flag in the class' private data.
-     * The code below is compatible with a hacked GTK+3 library which uses GTK_WINDOW_POPUP + 1 as the type
-     * for a window with CSD requested. It should also not fall over with the standard library...
-     */
-    pt->popup = gtk_window_new (GTK_WINDOW_POPUP + 1);
-    if (!pt->popup) pt->popup = gtk_window_new (GTK_WINDOW_POPUP);
-    gtk_window_set_type_hint (GTK_WINDOW (pt->popup), GDK_WINDOW_TYPE_HINT_TOOLTIP);
-    gtk_window_set_resizable (GTK_WINDOW (pt->popup), FALSE);
-
-#if GTK_CHECK_VERSION(3, 0, 0)
-    GtkStyleContext *context = gtk_widget_get_style_context (pt->popup);
-    gtk_style_context_add_class (context, GTK_STYLE_CLASS_TOOLTIP);
-
-    pt->box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 5);
-    gtk_container_add (GTK_CONTAINER (pt->popup), pt->box);
-#else
-    on_screen_changed (pt->popup);
-    gtk_widget_set_app_paintable (pt->popup, TRUE);
-    gtk_widget_set_name (pt->popup, "gtk-tooltip");
-
-    pt->alignment = gtk_alignment_new (0.5, 0.5, 1.0, 1.0);
-    gtk_container_add (GTK_CONTAINER (pt->popup), pt->alignment);
-    gtk_widget_show (pt->alignment);
-
-    g_signal_connect_swapped (pt->popup, "style-set", G_CALLBACK (gtk_tooltip_window_style_set), pt);
-    g_signal_connect_swapped (pt->popup, "expose-event", G_CALLBACK (gtk_tooltip_paint_window), pt);
-
-    pt->box = gtk_vbox_new (FALSE, pt->popup->style->xthickness);
-    gtk_container_add (GTK_CONTAINER (pt->alignment), pt->box);
-#endif
-
-    item = gtk_label_new (str1);
-    gtk_box_pack_start (GTK_BOX (pt->box), item, FALSE, FALSE, 0);
-    item = gtk_label_new (str2);
-    gtk_box_pack_start (GTK_BOX (pt->box), item, FALSE, FALSE, 0);
-
-    gtk_widget_show_all (pt->popup);
-    gtk_widget_hide (pt->popup);
-    lxpanel_plugin_popup_set_position_helper (pt->panel, pt->plugin, pt->popup, &x, &y);
-    gdk_window_move (gtk_widget_get_window (pt->popup), x, y);
-    gdk_window_set_events (gtk_widget_get_window (pt->popup), gdk_window_get_events (gtk_widget_get_window (pt->popup)) | GDK_BUTTON_PRESS_MASK);
-    g_signal_connect (G_OBJECT(pt->popup), "button-press-event", G_CALLBACK (ptbatt_window_click), pt);
-    gtk_window_present (GTK_WINDOW (pt->popup));
-}
-
-static void hide_message (PtBattPlugin *pt)
-{
-    if (pt->popup)
-    {
-		gtk_widget_destroy (pt->popup);
-		pt->popup = NULL;
-	}
 }
 
 /* gdk_pixbuf_get_from_surface function from GDK+3 */
@@ -603,7 +428,7 @@ static gboolean vtimer_event (PtBattPlugin *pt)
         int val = fgetc (fp);
         fclose (fp);
         if (val == '1')
-            show_message (pt, _("Low voltage warning"), _("Please check your power supply"));
+            lxpanel_notify (pt->panel, _("Low voltage warning\nPlease check your power supply"));
     }
     return TRUE;
 }
