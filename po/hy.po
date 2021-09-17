@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lxplug_ptbatt 0.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-09-17 16:09+0100\n"
+"POT-Creation-Date: 2021-09-17 13:25+0100\n"
 "PO-Revision-Date: 2017-10-06 08:04+0100\n"
 "Last-Translator: Avag Saya <info@armath.am>\n"
 "Language-Team: Armenian\n"
@@ -17,12 +17,12 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../plugins/ptbatt/ptbatt.c:547
+#: ../plugins/ptbatt/ptbatt.c:389
 #, c-format
 msgid "Charging : %d%%"
 msgstr "Լիցքավորում ՝ %d%%"
 
-#: ../plugins/ptbatt/ptbatt.c:549
+#: ../plugins/ptbatt/ptbatt.c:391
 #, c-format
 msgid ""
 "Charging : %d%%\n"
@@ -31,7 +31,7 @@ msgstr ""
 "Լիցքավորում ՝ %d%%\n"
 "Մնացել է ՝ %d րոպե"
 
-#: ../plugins/ptbatt/ptbatt.c:551
+#: ../plugins/ptbatt/ptbatt.c:393
 #, c-format
 msgid ""
 "Charging : %d%%\n"
@@ -40,7 +40,7 @@ msgstr ""
 "Լիցքավորում ՝ %d%%\n"
 "Մնացել է ՝ %0.1f ժամ"
 
-#: ../plugins/ptbatt/ptbatt.c:556
+#: ../plugins/ptbatt/ptbatt.c:398
 #, c-format
 msgid ""
 "Charged : %d%%\n"
@@ -49,12 +49,12 @@ msgstr ""
 "Լիցքավորված ՝ %d%%\n"
 "On external power"
 
-#: ../plugins/ptbatt/ptbatt.c:562
+#: ../plugins/ptbatt/ptbatt.c:404
 #, c-format
 msgid "Discharging : %d%%"
 msgstr "Լիցքաթափում ՝ %d%%"
 
-#: ../plugins/ptbatt/ptbatt.c:564
+#: ../plugins/ptbatt/ptbatt.c:406
 #, c-format
 msgid ""
 "Discharging : %d%%\n"
@@ -63,7 +63,7 @@ msgstr ""
 "Լիցքաթափում ՝ %d%%\n"
 "Մնացել է ՝ %d րոպե"
 
-#: ../plugins/ptbatt/ptbatt.c:566
+#: ../plugins/ptbatt/ptbatt.c:408
 #, c-format
 msgid ""
 "Discharging : %d%%\n"
@@ -72,18 +72,18 @@ msgstr ""
 "Լիցքափաթում ՝ %d%%\n"
 "Մնացել է ՝ %0.1f hours"
 
-#: ../plugins/ptbatt/ptbatt.c:589
-msgid "Low voltage warning"
-msgstr "Ցածր լարման նախազգուշացում"
+#: ../plugins/ptbatt/ptbatt.c:431
+msgid ""
+"Low voltage warning\n"
+"Please check your power supply"
+msgstr ""
+"Ցածր լարման նախազգուշացում\n"
+"Խնդրում ենք ստուգել ձեր հոսանքի աղբյուրը"
 
-#: ../plugins/ptbatt/ptbatt.c:589
-msgid "Please check your power supply"
-msgstr "Խնդրում ենք ստուգել ձեր հոսանքի աղբյուրը"
-
-#: ../plugins/ptbatt/ptbatt.c:673
+#: ../plugins/ptbatt/ptbatt.c:515
 msgid "Power & Battery"
 msgstr "Հոսանք և մարտկոց"
 
-#: ../plugins/ptbatt/ptbatt.c:674
+#: ../plugins/ptbatt/ptbatt.c:516
 msgid "Monitors voltage and laptop battery"
 msgstr "Վերահսկում է լարումն ու նոթբուքի մարտկոցը"

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-09-18 11:57+0200\n"
+"POT-Creation-Date: 2021-09-17 13:25+0100\n"
 "PO-Revision-Date: 2020-09-18 12:12+0200\n"
 "Last-Translator: Emanuele Goldoni <emanuele.goldoni@gmail.com>\n"
 "Language-Team: Italian\n"
@@ -17,12 +17,12 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 2.3\n"
 
-#: ../plugins/ptbatt/ptbatt.c:546
+#: ../plugins/ptbatt/ptbatt.c:389
 #, c-format
 msgid "Charging : %d%%"
 msgstr "In carica : %d%%"
 
-#: ../plugins/ptbatt/ptbatt.c:548
+#: ../plugins/ptbatt/ptbatt.c:391
 #, c-format
 msgid ""
 "Charging : %d%%\n"
@@ -31,7 +31,7 @@ msgstr ""
 "In carica : %d%%\n"
 "Tempo restante : %d minuti"
 
-#: ../plugins/ptbatt/ptbatt.c:550
+#: ../plugins/ptbatt/ptbatt.c:393
 #, c-format
 msgid ""
 "Charging : %d%%\n"
@@ -40,7 +40,7 @@ msgstr ""
 "In carica : %d%%\n"
 "Tempo restante : %0.1f ore"
 
-#: ../plugins/ptbatt/ptbatt.c:555
+#: ../plugins/ptbatt/ptbatt.c:398
 #, c-format
 msgid ""
 "Charged : %d%%\n"
@@ -49,12 +49,12 @@ msgstr ""
 "Carico : %d%%\n"
 "Collegato alla rete"
 
-#: ../plugins/ptbatt/ptbatt.c:561
+#: ../plugins/ptbatt/ptbatt.c:404
 #, c-format
 msgid "Discharging : %d%%"
 msgstr "In scaricamento : %d%%"
 
-#: ../plugins/ptbatt/ptbatt.c:563
+#: ../plugins/ptbatt/ptbatt.c:406
 #, c-format
 msgid ""
 "Discharging : %d%%\n"
@@ -63,7 +63,7 @@ msgstr ""
 "In scaricamento : %d%%\n"
 "Tempo restante : %d minuti"
 
-#: ../plugins/ptbatt/ptbatt.c:565
+#: ../plugins/ptbatt/ptbatt.c:408
 #, c-format
 msgid ""
 "Discharging : %d%%\n"
@@ -72,24 +72,18 @@ msgstr ""
 "In scaricamente : %d%%\n"
 "Tempo restante : %0.1f ore"
 
-#: ../plugins/ptbatt/ptbatt.c:588
-msgid "Low voltage warning"
-msgstr "Avviso alimentazione scarsa"
+#: ../plugins/ptbatt/ptbatt.c:431
+msgid ""
+"Low voltage warning\n"
+"Please check your power supply"
+msgstr ""
+"Avviso alimentazione scarsa\n"
+"Verificare l'alimentazione del sistema"
 
-#: ../plugins/ptbatt/ptbatt.c:588
-msgid "Please check your power supply"
-msgstr "Verificare l'alimentazione del sistema"
-
-#: ../plugins/ptbatt/ptbatt.c:672
+#: ../plugins/ptbatt/ptbatt.c:515
 msgid "Power & Battery"
 msgstr "Alimentazione e batteria"
 
-#: ../plugins/ptbatt/ptbatt.c:673
+#: ../plugins/ptbatt/ptbatt.c:516
 msgid "Monitors voltage and laptop battery"
 msgstr "Controlla l'alimentazione e la batteria del portatile"
-
-#~ msgid "Battery (pi-top / laptop)"
-#~ msgstr "Batteria (pi-top / portatile)"
-
-#~ msgid "Monitors battery for pi-top and laptops"
-#~ msgstr "Indicatore della batteria per pi-top e portatili"
