@@ -180,7 +180,7 @@ static int init_measurement (PtBattPlugin *pt)
         pt->requester = NULL;
         pt->context = NULL;
         pt->pt_batt_avail = FALSE;
-        if (system ("systemctl status pt-device-manager | grep -wq active") == 0)
+        if (system ("systemctl status pt-device-manager | grep -wq active") == 0 || system ("systemctl status pi-topd | grep -wq active") == 0)
         {
             g_message ("pi-top device manager found");
             pt->context = zmq_ctx_new ();

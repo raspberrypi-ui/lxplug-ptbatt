@@ -1,3 +1,9 @@
+lxplug-ptbatt (0.18) bullseye; urgency=medium
+
+  * Add check for new version of PiTop device manager
+
+ -- Simon Long <simon@raspberrypi.com>  Fri, 08 Oct 2021 09:21:39 +0100
+
 lxplug-ptbatt (0.17) bullseye; urgency=medium
 
   * Use lxpanel notification API
