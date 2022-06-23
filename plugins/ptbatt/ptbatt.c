@@ -104,6 +104,24 @@ static gboolean is_pi (void)
         return FALSE;
 }
 
+static int check_service (char *name)
+{
+    int res;
+    char *buf;
+
+    buf = g_strdup_printf ("systemctl status %s 2> /dev/null | grep -qw Active:", name);
+    res = system (buf);
+    g_free (buf);
+
+    if (res) return 0;
+
+    buf = g_strdup_printf ("systemctl status %s 2> /dev/null | grep -w Active: | grep -qw inactive", name);
+    res = system (buf);
+    g_free (buf);
+
+    return res;
+}
+
 /* gdk_pixbuf_get_from_surface function from GDK+3 */
 
 static void
@@ -180,9 +198,9 @@ static int init_measurement (PtBattPlugin *pt)
         pt->requester = NULL;
         pt->context = NULL;
         pt->pt_batt_avail = FALSE;
-        if (system ("systemctl status pt-device-manager | grep -wq active") == 0 || system ("systemctl status pi-topd | grep -wq active") == 0)
+        if (check_service ("pt-device-manager") || check_service ("pi-topd"))
         {
-            g_message ("pi-top device manager found");
+            g_message ("ptbatt: pi-top device manager found");
             pt->context = zmq_ctx_new ();
             if (pt->context)
             {
@@ -193,7 +211,7 @@ static int init_measurement (PtBattPlugin *pt)
                     {
                         if (zmq_send (pt->requester, "118", 3, ZMQ_NOBLOCK) == 3)
                         {
-                            g_message ("connected to pi-top device manager");
+                            g_message ("ptbatt: connected to pi-top device manager");
                             pt->pt_batt_avail = TRUE;
                             return 1;
                         }

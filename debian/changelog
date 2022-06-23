@@ -1,3 +1,9 @@
+lxplug-ptbatt (0.19) bullseye; urgency=medium
+
+  * Fix warnings on startup
+
+ -- Simon Long <simon@raspberrypi.com>  Thu, 23 Jun 2022 16:48:27 +0100
+
 lxplug-ptbatt (0.18) bullseye; urgency=medium
 
   * Add check for new version of PiTop device manager
