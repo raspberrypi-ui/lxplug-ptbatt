@@ -457,7 +457,8 @@ static gboolean vtimer_event (PtBattPlugin *pt)
 static void ptbatt_configuration_changed (LXPanel *panel, GtkWidget *p)
 {
     PtBattPlugin *pt = lxpanel_plugin_get_data (p);
-    update_icon (pt);
+    if (pt->timer) update_icon (pt);
+    else gtk_widget_hide (pt->plugin);
 }
 
 /* Plugin destructor. */
@@ -483,28 +484,27 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
 {
     /* Allocate and initialize plugin context */
     PtBattPlugin *pt = g_new0 (PtBattPlugin, 1);
-    pt->panel = panel;
-    pt->settings = settings;
 
 #ifdef ENABLE_NLS
     setlocale (LC_ALL, "");
     bindtextdomain (GETTEXT_PACKAGE, PACKAGE_LOCALE_DIR);
     bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
-    textdomain (GETTEXT_PACKAGE);
 #endif
+
+    /* Allocate top level widget and set into plugin widget pointer. */
+    pt->panel = panel;
+    pt->settings = settings;
+    pt->plugin = gtk_event_box_new ();
+    lxpanel_plugin_set_data (pt->plugin, pt, ptbatt_destructor);
+
+    /* Allocate icon as a child of top level */
+    pt->tray_icon = gtk_image_new ();
+    gtk_container_add (GTK_CONTAINER (pt->plugin), pt->tray_icon);
 
     pt->ispi = is_pi ();
 
     if (init_measurement (pt))
     {
-        /* Allocate top level widget and set into Plugin widget pointer. */
-        pt->plugin = gtk_event_box_new ();
-
-        /* Allocate icon as a child of top level */
-        pt->tray_icon = gtk_image_new ();
-        gtk_widget_set_visible (pt->tray_icon, TRUE);
-        gtk_container_add (GTK_CONTAINER (pt->plugin), pt->tray_icon);
-
         /* Load the symbols */
         pt->plug = gdk_pixbuf_new_from_file ("/usr/share/lxpanel/images/plug.png", NULL);
         pt->flash = gdk_pixbuf_new_from_file ("/usr/share/lxpanel/images/flash.png", NULL);
@@ -512,17 +512,13 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
         /* Start timed events to monitor status */
         pt->timer = g_timeout_add (INTERVAL, (GSourceFunc) timer_event, (gpointer) pt);
     }
-    else
-    {
-        pt->timer = 0;
-        /* a NULL label has a width of zero; unlike an empty button... */
-        pt->plugin = gtk_label_new (NULL);
-    }
+    else pt->timer = 0;
 
     /* Start timed events to monitor low voltage warnings */
     if (pt->ispi) pt->vtimer = g_timeout_add (VMON_INTERVAL, (GSourceFunc) vtimer_event, (gpointer) pt);
 
-    lxpanel_plugin_set_data (pt->plugin, pt, ptbatt_destructor);
+    /* Show the widget and return */
+    gtk_widget_show_all (pt->plugin);
     return pt->plugin;
 }
 

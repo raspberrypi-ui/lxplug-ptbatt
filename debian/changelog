@@ -1,3 +1,9 @@
+lxplug-ptbatt (0.20) bullseye; urgency=medium
+
+  * Tidy constructor; fix translations
+
+ -- Simon Long <simon@raspberrypi.com>  Mon, 18 Jul 2022 14:31:53 +0100
+
 lxplug-ptbatt (0.19) bullseye; urgency=medium
 
   * Fix warnings on startup
