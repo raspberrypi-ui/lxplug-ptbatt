@@ -24,7 +24,8 @@ ptbatt_la_CFLAGS = \
 	-DPACKAGE_LOCALE_DIR=\""$(prefix)/$(DATADIRNAME)/locale"\" \
 	-I/usr/include/lxpanel \
 	$(PACKAGE_CFLAGS) \
-	$(G_CAST_CHECKS)
+	$(G_CAST_CHECKS) \
+	-Wall
 
 ptbatt_la_LDFLAGS = \
 	$(PACKAGE_LIBS) \
