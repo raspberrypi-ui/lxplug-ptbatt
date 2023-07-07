@@ -1,3 +1,9 @@
+lxplug-ptbatt (0.22) bullseye; urgency=medium
+
+  * Remove redundant widgets
+
+ -- Simon Long <simon@raspberrypi.com>  Fri, 07 Jul 2023 11:31:43 +0100
+
 lxplug-ptbatt (0.21) bullseye; urgency=medium
 
   * Add Korean translations

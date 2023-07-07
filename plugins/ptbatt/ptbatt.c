@@ -62,9 +62,6 @@ typedef struct {
     battery *batt;
     GdkPixbuf *plug;
     GdkPixbuf *flash;
-    GtkWidget *popup;               /* Popup message */
-    GtkWidget *alignment;           /* Alignment object in popup message */
-    GtkWidget *box;                 /* Vbox in popup message */
     guint timer;
     guint vtimer;
     gboolean pt_batt_avail;
