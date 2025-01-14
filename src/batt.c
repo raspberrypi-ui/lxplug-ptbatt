@@ -378,15 +378,12 @@ void batt_init (PtBattPlugin *pt)
     gtk_event_controller_set_propagation_phase (GTK_EVENT_CONTROLLER (pt->gesture), GTK_PHASE_BUBBLE);
 #endif
 
-    if (init_measurement (pt))
-    {
-        /* Load the symbols */
-        pt->plug = gdk_pixbuf_new_from_file (PACKAGE_DATA_DIR "/images/plug.png", NULL);
-        pt->flash = gdk_pixbuf_new_from_file (PACKAGE_DATA_DIR "/images/flash.png", NULL);
+    /* Load the symbols */
+    pt->plug = gdk_pixbuf_new_from_file (PACKAGE_DATA_DIR "/images/plug.png", NULL);
+    pt->flash = gdk_pixbuf_new_from_file (PACKAGE_DATA_DIR "/images/flash.png", NULL);
 
-        /* Start timed events to monitor status */
-        pt->timer = g_timeout_add (INTERVAL, (GSourceFunc) timer_event, (gpointer) pt);
-    }
+    /* Start timed events to monitor status */
+    if (init_measurement (pt)) pt->timer = g_timeout_add (INTERVAL, (GSourceFunc) timer_event, (gpointer) pt);
     else pt->timer = 0;
 
     /* Show the widget and return */
@@ -439,6 +436,29 @@ static void ptbatt_configuration_changed (LXPanel *, GtkWidget *p)
     batt_update_display (pt);
 }
 
+/* Apply changes from config dialog */
+static gboolean ptbatt_apply_configuration (gpointer user_data)
+{
+    PtBattPlugin *pt = lxpanel_plugin_get_data (GTK_WIDGET (user_data));
+    config_group_set_int (pt->settings, "BattNum", pt->batt_num);
+    if (pt->timer) g_source_remove (pt->timer);
+    /* Start timed events to monitor status */
+    if (init_measurement (pt)) pt->timer = g_timeout_add (INTERVAL, (GSourceFunc) timer_event, (gpointer) pt);
+    else pt->timer = 0;
+    return FALSE;
+}
+
+/* Display configuration dialog */
+static GtkWidget *ptbatt_configure (LXPanel *panel, GtkWidget *p)
+{
+    PtBattPlugin *pt = lxpanel_plugin_get_data (p);
+
+    return lxpanel_generic_config_dlg(_("Battery"), panel,
+        ptbatt_apply_configuration, p,
+        _("Battery number to monitor"), &pt->batt_num, CONF_TYPE_INT,
+        NULL);
+}
+
 FM_DEFINE_MODULE(lxpanel_gtk, batt)
 
 /* Plugin descriptor. */
@@ -447,6 +467,7 @@ LXPanelPluginInit fm_module_init_lxpanel_gtk = {
     .description = N_("Monitors laptop battery"),
     .new_instance = ptbatt_constructor,
     .reconfigure = ptbatt_configuration_changed,
+    .config = ptbatt_configure,
     .gettext_package = GETTEXT_PACKAGE
 };
 #endif
