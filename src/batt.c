@@ -48,6 +48,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define INTERVAL 5000
 #endif
 
+/* Battery states */
 typedef enum
 {
     STAT_UNKNOWN = -1,
@@ -56,11 +57,13 @@ typedef enum
     STAT_EXT_POWER = 2
 } status_t;
 
-/* Plug-in global data */
+/*----------------------------------------------------------------------------*/
+/* Plug-in global data                                                        */
+/*----------------------------------------------------------------------------*/
 
-/* Battery states */
-
-/* Prototypes */
+/*----------------------------------------------------------------------------*/
+/* Prototypes                                                                 */
+/*----------------------------------------------------------------------------*/
 
 static void convert_alpha (guchar *dest_data, int dest_stride, guchar *src_data, int src_stride, int src_x, int src_y, int width, int height);
 GdkPixbuf *gdk_pixbuf_get_from_surface (cairo_surface_t *surface, gint src_x, gint src_y, gint width, gint height);
@@ -70,6 +73,9 @@ static void draw_icon (PtBattPlugin *pt, int lev, float r, float g, float b, int
 static void update_icon (PtBattPlugin *pt);
 static gboolean timer_event (PtBattPlugin *pt);
 
+/*----------------------------------------------------------------------------*/
+/* Function definitions                                                       */
+/*----------------------------------------------------------------------------*/
 
 /* gdk_pixbuf_get_from_surface function from GDK+3 */
 
