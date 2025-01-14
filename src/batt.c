@@ -1,5 +1,5 @@
-/*
-Copyright (c) 2018 Raspberry Pi (Trading) Ltd.
+/*============================================================================
+Copyright (c) 2018-2025 Raspberry Pi Holdings Ltd.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -23,11 +23,8 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+============================================================================*/
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
 #include <errno.h>
 #include <locale.h>
 #include <stdlib.h>
@@ -35,12 +32,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <glib/gi18n.h>
 #include <fcntl.h>
-#include <sys/ioctl.h>
-#include <asm/ioctl.h>
-#include <zmq.h>
 #include "batt_sys.h"
 
+#ifdef LXPLUG
 #include "plugin.h"
+#else
+#include "lxutils.h"
+#endif
+
+#include "batt.h"
+
+/*----------------------------------------------------------------------------*/
+/* Typedefs and macros */
+/*----------------------------------------------------------------------------*/
 
 //#define TEST_MODE
 #ifdef TEST_MODE
@@ -54,22 +58,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /* Plug-in global data */
 
-typedef struct {
-    GtkWidget *plugin;              /* Back pointer to the widget */
-    LXPanel *panel;                 /* Back pointer to panel */
-    GtkWidget *tray_icon;           /* Displayed image */
-    config_setting_t *settings;     /* Plugin settings */
-    battery *batt;
-    GdkPixbuf *plug;
-    GdkPixbuf *flash;
-    guint timer;
-    guint vtimer;
-    gboolean pt_batt_avail;
-    void *context;
-    void *requester;
-    gboolean ispi;
-} PtBattPlugin;
-
 /* Battery states */
 
 typedef enum
@@ -82,7 +70,6 @@ typedef enum
 
 /* Prototypes */
 
-static gboolean is_pi (void);
 static void convert_alpha (guchar *dest_data, int dest_stride, guchar *src_data, int src_stride, int src_x, int src_y, int width, int height);
 GdkPixbuf *gdk_pixbuf_get_from_surface (cairo_surface_t *surface, gint src_x, gint src_y, gint width, gint height);
 static int init_measurement (PtBattPlugin *pt);
@@ -90,34 +77,7 @@ static int charge_level (PtBattPlugin *pt, status_t *status, int *tim);
 static void draw_icon (PtBattPlugin *pt, int lev, float r, float g, float b, int powered);
 static void update_icon (PtBattPlugin *pt);
 static gboolean timer_event (PtBattPlugin *pt);
-static gboolean vtimer_event (PtBattPlugin *pt);
 
-
-static gboolean is_pi (void)
-{
-    if (system ("raspi-config nonint is_pi") == 0)
-        return TRUE;
-    else
-        return FALSE;
-}
-
-static int check_service (char *name)
-{
-    int res;
-    char *buf;
-
-    buf = g_strdup_printf ("systemctl status %s 2> /dev/null | grep -qw Active:", name);
-    res = system (buf);
-    g_free (buf);
-
-    if (res) return 0;
-
-    buf = g_strdup_printf ("systemctl status %s 2> /dev/null | grep -w Active: | grep -qw inactive", name);
-    res = system (buf);
-    g_free (buf);
-
-    return res;
-}
 
 /* gdk_pixbuf_get_from_surface function from GDK+3 */
 
@@ -163,8 +123,8 @@ convert_alpha (guchar *dest_data,
 
 GdkPixbuf *
 gdk_pixbuf_get_from_surface  (cairo_surface_t *surface,
-                              gint             src_x,
-                              gint             src_y,
+                              gint             ,
+                              gint             ,
                               gint             width,
                               gint             height)
 {
@@ -189,44 +149,15 @@ static int init_measurement (PtBattPlugin *pt)
 #ifdef TEST_MODE
     return 1;
 #endif
-    if (pt->ispi)
-    {
-        pt->pt_batt_avail = FALSE;
-        pt->requester = NULL;
-        pt->context = NULL;
-        pt->pt_batt_avail = FALSE;
-        if (check_service ("pt-device-manager") || check_service ("pi-topd"))
-        {
-            g_message ("ptbatt: pi-top device manager found");
-            pt->context = zmq_ctx_new ();
-            if (pt->context)
-            {
-                pt->requester = zmq_socket (pt->context, ZMQ_REQ);
-                if (pt->requester)
-                {
-                    if (zmq_connect (pt->requester, "tcp://127.0.0.1:3782") == 0)
-                    {
-                        if (zmq_send (pt->requester, "118", 3, ZMQ_NOBLOCK) == 3)
-                        {
-                            g_message ("ptbatt: connected to pi-top device manager");
-                            pt->pt_batt_avail = TRUE;
-                            return 1;
-                        }
-                    }
-                    zmq_close (pt->requester);
-                    pt->requester = NULL;
-                }
-                zmq_ctx_destroy (pt->context);
-                pt->context = NULL;
-            }
-            return 0;
-        }
-    }
+#ifdef LXPLUG
     int val;
     if (config_setting_lookup_int (pt->settings, "BattNum", &val))
         pt->batt = battery_get (val);
     else
         pt->batt = battery_get (0);
+#else
+    pt->batt = battery_get (pt->batt_num);
+#endif
     if (pt->batt) return 1;
 
     return 0;
@@ -253,36 +184,6 @@ static int charge_level (PtBattPlugin *pt, status_t *status, int *tim)
 #endif
     *status = STAT_UNKNOWN;
     *tim = 0;
-    if (pt->ispi)
-    {
-        int capacity, state, time, res;
-        char buffer[100];
-
-        if (pt->pt_batt_avail)
-        {
-            if (!pt->requester) return -1;
-
-            res = zmq_recv (pt->requester, buffer, 100, ZMQ_NOBLOCK);
-            if (res > 0 && res < 100)
-            {
-                buffer[res] = 0;
-                if (sscanf (buffer, "%d|%d|%d|%d|", &res, &state, &capacity, &time) == 4)
-                {
-                    if (res == 218 && (state == STAT_CHARGING || state == STAT_DISCHARGING || state == STAT_EXT_POWER))
-                    {
-                        // these two lines shouldn't be necessary once EXT_POWER state is implemented in the device manager
-                        if (capacity == 100 && time == 0) *status = STAT_EXT_POWER;
-                        else
-                        *status = (status_t) state;
-                        *tim = time;
-                    }
-                }
-            }
-            zmq_send (pt->requester, "118", 3, ZMQ_NOBLOCK);
-            if (*status != STAT_UNKNOWN) return capacity;
-            else return -1;
-        }
-    }
     battery *b = pt->batt;
     int mins;
     if (b)
@@ -310,7 +211,7 @@ static void draw_icon (PtBattPlugin *pt, int lev, float r, float g, float b, int
     int h, w, f, ic; 
 
     // calculate dimensions based on icon size
-    ic = panel_get_icon_size (pt->panel);
+    ic = wrap_icon_size (pt);
     w = ic < 36 ? 36 : ic;
     h = ((w * 10) / 36) * 2; // force it to be even
     if (h < 18) h = 18;
@@ -435,97 +336,120 @@ static gboolean timer_event (PtBattPlugin *pt)
     return TRUE;
 }
 
-static gboolean vtimer_event (PtBattPlugin *pt)
+
+/*----------------------------------------------------------------------------*/
+/* wf-panel plugin functions                                                  */
+/*----------------------------------------------------------------------------*/
+
+#ifndef LXPLUG
+/* Handler for long press gesture */
+static void batt_gesture_pressed (GtkGestureLongPress *, gdouble x, gdouble y, PtBattPlugin *)
 {
-    FILE *fp = fopen (VMON_PATH, "rb");
-    if (fp)
-    {
-        int val = fgetc (fp);
-        fclose (fp);
-        if (val == '1')
-            lxpanel_notify (pt->panel, _("Low voltage warning\nPlease check your power supply"));
-    }
-    return TRUE;
+    pressed = PRESS_LONG;
+    press_x = x;
+    press_y = y;
 }
 
-/* Plugin functions */
+static void batt_gesture_end (GtkGestureLongPress *, GdkEventSequence *, PtBattPlugin *pt)
+{
+    if (pressed == PRESS_LONG) pass_right_click (pt->plugin, press_x, press_y);
+}
+#endif
 
 /* Handler for system config changed message from panel */
-static void ptbatt_configuration_changed (LXPanel *panel, GtkWidget *p)
+void batt_update_display (PtBattPlugin *pt)
 {
-    PtBattPlugin *pt = lxpanel_plugin_get_data (p);
     if (pt->timer) update_icon (pt);
     else gtk_widget_hide (pt->plugin);
 }
 
-/* Plugin destructor. */
-static void ptbatt_destructor (gpointer user_data)
+void batt_init (PtBattPlugin *pt)
 {
-    PtBattPlugin *pt = (PtBattPlugin *) user_data;
-
-    /* Disconnect the timer. */
-    if (pt->timer) g_source_remove (pt->timer);
-
-    if (pt->ispi)
-    {
-        if (pt->requester) zmq_close (pt->requester);
-        if (pt->context) zmq_ctx_destroy (pt->context);
-    }
-
-    /* Deallocate memory */
-    g_free (pt);
-}
-
-/* Plugin constructor. */
-static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings)
-{
-    /* Allocate and initialize plugin context */
-    PtBattPlugin *pt = g_new0 (PtBattPlugin, 1);
-
-#ifdef ENABLE_NLS
-    setlocale (LC_ALL, "");
-    bindtextdomain (GETTEXT_PACKAGE, PACKAGE_LOCALE_DIR);
-    bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
-#endif
-
-    /* Allocate top level widget and set into plugin widget pointer. */
-    pt->panel = panel;
-    pt->settings = settings;
-    pt->plugin = gtk_event_box_new ();
-    lxpanel_plugin_set_data (pt->plugin, pt, ptbatt_destructor);
-
     /* Allocate icon as a child of top level */
     pt->tray_icon = gtk_image_new ();
     gtk_container_add (GTK_CONTAINER (pt->plugin), pt->tray_icon);
 
-    pt->ispi = is_pi ();
+#ifndef LXPLUG
+    /* Set up long press */
+    pt->gesture = gtk_gesture_long_press_new (pt->plugin);
+    gtk_gesture_single_set_touch_only (GTK_GESTURE_SINGLE (pt->gesture), touch_only);
+    g_signal_connect (pt->gesture, "pressed", G_CALLBACK (batt_gesture_pressed), pt);
+    g_signal_connect (pt->gesture, "end", G_CALLBACK (batt_gesture_end), pt);
+    gtk_event_controller_set_propagation_phase (GTK_EVENT_CONTROLLER (pt->gesture), GTK_PHASE_BUBBLE);
+#endif
 
     if (init_measurement (pt))
     {
         /* Load the symbols */
-        pt->plug = gdk_pixbuf_new_from_file ("/usr/share/lxpanel/images/plug.png", NULL);
-        pt->flash = gdk_pixbuf_new_from_file ("/usr/share/lxpanel/images/flash.png", NULL);
+        pt->plug = gdk_pixbuf_new_from_file (PACKAGE_DATA_DIR "/images/plug.png", NULL);
+        pt->flash = gdk_pixbuf_new_from_file (PACKAGE_DATA_DIR "/images/flash.png", NULL);
 
         /* Start timed events to monitor status */
         pt->timer = g_timeout_add (INTERVAL, (GSourceFunc) timer_event, (gpointer) pt);
     }
     else pt->timer = 0;
 
-    /* Start timed events to monitor low voltage warnings */
-    if (pt->ispi) pt->vtimer = g_timeout_add (VMON_INTERVAL, (GSourceFunc) vtimer_event, (gpointer) pt);
-
     /* Show the widget and return */
     gtk_widget_show_all (pt->plugin);
+}
+
+void batt_destructor (gpointer user_data)
+{
+    PtBattPlugin *pt = (PtBattPlugin *) user_data;
+
+    /* Disconnect the timer */
+    if (pt->timer) g_source_remove (pt->timer);
+
+#ifndef LXPLUG
+    if (pt->gesture) g_object_unref (pt->gesture);
+#endif
+
+    g_free (pt);
+}
+
+/*----------------------------------------------------------------------------*/
+/* LXPanel plugin functions                                                   */
+/*----------------------------------------------------------------------------*/
+#ifdef LXPLUG
+
+/* Constructor */
+static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings)
+{
+    /* Allocate and initialize plugin context */
+    PtBattPlugin *pt = g_new0 (PtBattPlugin, 1);
+
+    setlocale (LC_ALL, "");
+    bindtextdomain (GETTEXT_PACKAGE, PACKAGE_LOCALE_DIR);
+    bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
+
+    /* Allocate top level widget and set into plugin widget pointer. */
+    pt->panel = panel;
+    pt->settings = settings;
+    pt->plugin = gtk_event_box_new ();
+    lxpanel_plugin_set_data (pt->plugin, pt, batt_destructor);
+
+    batt_init (pt);
     return pt->plugin;
 }
 
-FM_DEFINE_MODULE(lxpanel_gtk, ptbatt)
+/* Handler for system config changed message from panel */
+static void ptbatt_configuration_changed (LXPanel *, GtkWidget *p)
+{
+    PtBattPlugin *pt = lxpanel_plugin_get_data (p);
+    batt_update_display (pt);
+}
+
+FM_DEFINE_MODULE(lxpanel_gtk, batt)
 
 /* Plugin descriptor. */
 LXPanelPluginInit fm_module_init_lxpanel_gtk = {
-    .name = N_("Power & Battery"),
-    .description = N_("Monitors voltage and laptop battery"),
+    .name = N_("Battery"),
+    .description = N_("Monitors laptop battery"),
     .new_instance = ptbatt_constructor,
     .reconfigure = ptbatt_configuration_changed,
     .gettext_package = GETTEXT_PACKAGE
 };
+#endif
+
+/* End of file */
+/*----------------------------------------------------------------------------*/
