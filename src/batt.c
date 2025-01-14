@@ -25,13 +25,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ============================================================================*/
 
-#include <errno.h>
 #include <locale.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
 #include <glib/gi18n.h>
-#include <fcntl.h>
 #include "batt_sys.h"
 
 #ifdef LXPLUG
@@ -53,13 +48,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define INTERVAL 5000
 #endif
 
-#define VMON_INTERVAL 15000
-#define VMON_PATH "/sys/devices/platform/soc/soc:firmware/raspberrypi-hwmon/hwmon/hwmon1/in0_lcrit_alarm"
-
-/* Plug-in global data */
-
-/* Battery states */
-
 typedef enum
 {
     STAT_UNKNOWN = -1,
@@ -67,6 +55,10 @@ typedef enum
     STAT_CHARGING = 1,
     STAT_EXT_POWER = 2
 } status_t;
+
+/* Plug-in global data */
+
+/* Battery states */
 
 /* Prototypes */
 
@@ -162,7 +154,6 @@ static int init_measurement (PtBattPlugin *pt)
 
     return 0;
 }
-
 
 /* Read current capacity, status and time remaining from battery */
 
@@ -335,7 +326,6 @@ static gboolean timer_event (PtBattPlugin *pt)
     update_icon (pt);
     return TRUE;
 }
-
 
 /*----------------------------------------------------------------------------*/
 /* wf-panel plugin functions                                                  */
