@@ -337,21 +337,6 @@ static gboolean timer_event (PtBattPlugin *pt)
 /* wf-panel plugin functions                                                  */
 /*----------------------------------------------------------------------------*/
 
-#ifndef LXPLUG
-/* Handler for long press gesture */
-static void batt_gesture_pressed (GtkGestureLongPress *, gdouble x, gdouble y, PtBattPlugin *)
-{
-    pressed = PRESS_LONG;
-    press_x = x;
-    press_y = y;
-}
-
-static void batt_gesture_end (GtkGestureLongPress *, GdkEventSequence *, PtBattPlugin *pt)
-{
-    if (pressed == PRESS_LONG) pass_right_click (pt->plugin, press_x, press_y);
-}
-#endif
-
 /* Handler for system config changed message from panel */
 void batt_update_display (PtBattPlugin *pt)
 {
@@ -367,11 +352,7 @@ void batt_init (PtBattPlugin *pt)
 
 #ifndef LXPLUG
     /* Set up long press */
-    pt->gesture = gtk_gesture_long_press_new (pt->plugin);
-    gtk_gesture_single_set_touch_only (GTK_GESTURE_SINGLE (pt->gesture), touch_only);
-    g_signal_connect (pt->gesture, "pressed", G_CALLBACK (batt_gesture_pressed), pt);
-    g_signal_connect (pt->gesture, "end", G_CALLBACK (batt_gesture_end), pt);
-    gtk_event_controller_set_propagation_phase (GTK_EVENT_CONTROLLER (pt->gesture), GTK_PHASE_BUBBLE);
+    pt->gesture = add_long_press (pt->plugin);
 #endif
 
     /* Load the symbols */
