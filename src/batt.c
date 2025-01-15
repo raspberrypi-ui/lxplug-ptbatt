@@ -352,7 +352,7 @@ void batt_init (PtBattPlugin *pt)
 
 #ifndef LXPLUG
     /* Set up long press */
-    pt->gesture = add_long_press (pt->plugin);
+    pt->gesture = add_long_press (pt->plugin, NULL, NULL);
 #endif
 
     /* Load the symbols */
