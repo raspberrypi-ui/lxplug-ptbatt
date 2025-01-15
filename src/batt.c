@@ -407,9 +407,9 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
 }
 
 /* Handler for system config changed message from panel */
-static void ptbatt_configuration_changed (LXPanel *, GtkWidget *p)
+static void ptbatt_configuration_changed (LXPanel *, GtkWidget *plugin)
 {
-    PtBattPlugin *pt = lxpanel_plugin_get_data (p);
+    PtBattPlugin *pt = lxpanel_plugin_get_data (plugin);
     batt_update_display (pt);
 }
 
@@ -417,21 +417,24 @@ static void ptbatt_configuration_changed (LXPanel *, GtkWidget *p)
 static gboolean ptbatt_apply_configuration (gpointer user_data)
 {
     PtBattPlugin *pt = lxpanel_plugin_get_data (GTK_WIDGET (user_data));
+
     config_group_set_int (pt->settings, "BattNum", pt->batt_num);
-    if (pt->timer) g_source_remove (pt->timer);
+
     /* Start timed events to monitor status */
+    if (pt->timer) g_source_remove (pt->timer);
     if (init_measurement (pt)) pt->timer = g_timeout_add (INTERVAL, (GSourceFunc) timer_event, (gpointer) pt);
     else pt->timer = 0;
+
     return FALSE;
 }
 
 /* Display configuration dialog */
-static GtkWidget *ptbatt_configure (LXPanel *panel, GtkWidget *p)
+static GtkWidget *ptbatt_configure (LXPanel *panel, GtkWidget *plugin)
 {
-    PtBattPlugin *pt = lxpanel_plugin_get_data (p);
+    PtBattPlugin *pt = lxpanel_plugin_get_data (plugin);
 
     return lxpanel_generic_config_dlg(_("Battery"), panel,
-        ptbatt_apply_configuration, p,
+        ptbatt_apply_configuration, plugin,
         _("Battery number to monitor"), &pt->batt_num, CONF_TYPE_INT,
         NULL);
 }
