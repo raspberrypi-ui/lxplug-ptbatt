@@ -1,0 +1,4 @@
+usr/lib/aarch64-linux-gnu/wf-panel-pi/libbatt.so
+usr/share/wf-panel-pi/metadata/batt.xml
+usr/share/locale/*/LC_MESSAGES/wfplug_batt.mo
+usr/share/wf-panel-pi/images/*.png

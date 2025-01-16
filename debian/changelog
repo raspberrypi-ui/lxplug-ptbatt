@@ -1,3 +1,9 @@
+pplug-ptbatt (0.23) bookworm; urgency=medium
+
+  * First hybrid package version
+
+ -- Simon Long <simon@raspberrypi.com>  Thu, 16 Jan 2025 17:46:06 +0000
+
 lxplug-ptbatt (0.22) bullseye; urgency=medium
 
   * Remove redundant widgets
