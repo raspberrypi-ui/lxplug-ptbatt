@@ -1,28 +1,28 @@
-# English translations for lxplug_ptbatt package.
-# Copyright (C) 2017 Raspberry Pi
-# This file is distributed under the same license as the lxplug_ptbatt package.
-# Simon Long <simon@raspberrypi.org>, 2017.
+# English translations for wf-panel-pi package.
+# Copyright (C) 2024 Raspberry Pi Ltd
+# This file is distributed under the same license as the wf-panel-pi package.
+# Simon Long <simon@raspberrypi.com>, 2024.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: lxplug_ptbatt 0.1\n"
+"Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-09-17 13:25+0100\n"
-"PO-Revision-Date: 2017-10-06 08:04+0100\n"
-"Last-Translator: Simon Long <simon@raspberrypi.org>\n"
+"POT-Creation-Date: 2025-01-20 07:53+0000\n"
+"PO-Revision-Date: 2017-03-06 14:18+0000\n"
+"Last-Translator: Simon Long <simon@raspberrypi.com>\n"
 "Language-Team: English (British)\n"
 "Language: en_GB\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=ASCII\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../plugins/ptbatt/ptbatt.c:389
+#: ../src/batt.c:302
 #, c-format
 msgid "Charging : %d%%"
 msgstr "Charging : %d%%"
 
-#: ../plugins/ptbatt/ptbatt.c:391
+#: ../src/batt.c:304
 #, c-format
 msgid ""
 "Charging : %d%%\n"
@@ -31,7 +31,7 @@ msgstr ""
 "Charging : %d%%\n"
 "Time remaining : %d minutes"
 
-#: ../plugins/ptbatt/ptbatt.c:393
+#: ../src/batt.c:306
 #, c-format
 msgid ""
 "Charging : %d%%\n"
@@ -40,7 +40,7 @@ msgstr ""
 "Charging : %d%%\n"
 "Time remaining : %0.1f hours"
 
-#: ../plugins/ptbatt/ptbatt.c:398
+#: ../src/batt.c:311
 #, c-format
 msgid ""
 "Charged : %d%%\n"
@@ -49,12 +49,12 @@ msgstr ""
 "Charged : %d%%\n"
 "On external power"
 
-#: ../plugins/ptbatt/ptbatt.c:404
+#: ../src/batt.c:317
 #, c-format
 msgid "Discharging : %d%%"
 msgstr "Discharging : %d%%"
 
-#: ../plugins/ptbatt/ptbatt.c:406
+#: ../src/batt.c:319
 #, c-format
 msgid ""
 "Discharging : %d%%\n"
@@ -63,7 +63,7 @@ msgstr ""
 "Discharging : %d%%\n"
 "Time remaining : %d minutes"
 
-#: ../plugins/ptbatt/ptbatt.c:408
+#: ../src/batt.c:321
 #, c-format
 msgid ""
 "Discharging : %d%%\n"
@@ -72,18 +72,15 @@ msgstr ""
 "Discharging : %d%%\n"
 "Time remaining : %0.1f hours"
 
-#: ../plugins/ptbatt/ptbatt.c:431
-msgid ""
-"Low voltage warning\n"
-"Please check your power supply"
-msgstr ""
-"Low voltage warning\n"
-"Please check your power supply"
+#: ../src/batt.c:436 ../src/batt.c:446 ../src/batt.cpp:40
+msgid "Battery"
+msgstr "Battery"
 
-#: ../plugins/ptbatt/ptbatt.c:515
-msgid "Power & Battery"
-msgstr "Power & Battery"
+#: ../src/batt.c:438 ../src/batt.cpp:36
+msgid "Battery number to monitor"
+msgstr "Battery number to monitor"
 
-#: ../plugins/ptbatt/ptbatt.c:516
-msgid "Monitors voltage and laptop battery"
+#: ../src/batt.c:447
+#, fuzzy
+msgid "Monitors laptop battery"
 msgstr "Monitors voltage and laptop battery"

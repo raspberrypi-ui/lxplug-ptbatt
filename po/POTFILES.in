@@ -1,2 +1,7 @@
 [encoding: UTF-8]
-plugins/ptbatt/ptbatt.c
+src/batt.c
+src/batt.cpp
+src/batt.h
+src/batt.hpp
+src/batt_sys.c
+src/batt_sys.h
