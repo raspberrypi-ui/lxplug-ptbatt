@@ -36,6 +36,7 @@ extern "C" {
 #include "batt.h"
 extern void batt_init (PtBattPlugin *pt);
 extern void batt_update_display (PtBattPlugin *pt);
+extern void batt_set_num (PtBattPlugin *pt);
 extern void batt_destructor (gpointer user_data);
 }
 
@@ -59,6 +60,7 @@ class WayfireBatt : public WayfireWidget
     void icon_size_changed_cb (void);
     void bar_pos_changed_cb (void);
     bool set_icon (void);
+    void settings_changed_cb (void);
 };
 
 #endif /* end of include guard: WIDGETS_BATT_HPP */

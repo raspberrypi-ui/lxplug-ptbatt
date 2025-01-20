@@ -147,15 +147,7 @@ static int init_measurement (PtBattPlugin *pt)
 #ifdef TEST_MODE
     return 1;
 #endif
-#ifdef LXPLUG
-    int val;
-    if (config_setting_lookup_int (pt->settings, "BattNum", &val))
-        pt->batt = battery_get (val);
-    else
-        pt->batt = battery_get (0);
-#else
     pt->batt = battery_get (pt->batt_num);
-#endif
     if (pt->batt) return 1;
 
     return 0;
@@ -344,6 +336,16 @@ void batt_update_display (PtBattPlugin *pt)
     else gtk_widget_hide (pt->plugin);
 }
 
+/* Handler for battery number update from variable watcher */
+void batt_set_num (PtBattPlugin *pt)
+{
+    if (pt->timer) g_source_remove (pt->timer);
+    if (init_measurement (pt))
+        pt->timer = g_timeout_add (INTERVAL, (GSourceFunc) timer_event, (gpointer) pt);
+    else
+        pt->timer = 0;
+}
+
 void batt_init (PtBattPlugin *pt)
 {
     setlocale (LC_ALL, "");
@@ -364,8 +366,7 @@ void batt_init (PtBattPlugin *pt)
     pt->flash = gdk_pixbuf_new_from_file (PACKAGE_DATA_DIR "/images/flash.png", NULL);
 
     /* Start timed events to monitor status */
-    if (init_measurement (pt)) pt->timer = g_timeout_add (INTERVAL, (GSourceFunc) timer_event, (gpointer) pt);
-    else pt->timer = 0;
+    batt_set_num (pt);
 
     /* Show the widget and return */
     gtk_widget_show_all (pt->plugin);
@@ -402,6 +403,9 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
     pt->plugin = gtk_event_box_new ();
     lxpanel_plugin_set_data (pt->plugin, pt, batt_destructor);
 
+    /* Read config */
+    if (!config_setting_lookup_int (pt->settings, "BattNum", &pt->batt_num)) pt->batt_num = 0;
+
     batt_init (pt);
     return pt->plugin;
 }
@@ -420,11 +424,7 @@ static gboolean ptbatt_apply_configuration (gpointer user_data)
 
     config_group_set_int (pt->settings, "BattNum", pt->batt_num);
 
-    /* Start timed events to monitor status */
-    if (pt->timer) g_source_remove (pt->timer);
-    if (init_measurement (pt)) pt->timer = g_timeout_add (INTERVAL, (GSourceFunc) timer_event, (gpointer) pt);
-    else pt->timer = 0;
-
+    batt_set_num (pt);
     return FALSE;
 }
 
