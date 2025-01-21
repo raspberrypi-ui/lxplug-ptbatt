@@ -59,7 +59,7 @@ bool WayfireBatt::set_icon (void)
     return false;
 }
 
-void WayfireUpdater::settings_changed_cb (void)
+void WayfireBatt::settings_changed_cb (void)
 {
     pt->batt_num = batt_num;
     batt_set_num (pt);
@@ -88,7 +88,7 @@ void WayfireBatt::init (Gtk::HBox *container)
     icon_size.set_callback (sigc::mem_fun (*this, &WayfireBatt::icon_size_changed_cb));
     bar_pos.set_callback (sigc::mem_fun (*this, &WayfireBatt::bar_pos_changed_cb));
 
-    batt_num.set_callback (sigc::mem_fun (*this, &WayfireUpdater::settings_changed_cb));
+    batt_num.set_callback (sigc::mem_fun (*this, &WayfireBatt::settings_changed_cb));
 }
 
 WayfireBatt::~WayfireBatt()
