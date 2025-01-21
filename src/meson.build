@@ -40,6 +40,6 @@ shared_module('lib' + meson.project_name(), wsources,
 )
 
 metadata = files(
-  'batt.xml'
+  'ptbatt.xml'
 )
 install_data(metadata, install_dir: metadata_dir)
