@@ -43,6 +43,7 @@ typedef struct
     guint timer;
     guint vtimer;
     int batt_num;
+    gboolean simulate;
 } PtBattPlugin;
 
 /* End of file */

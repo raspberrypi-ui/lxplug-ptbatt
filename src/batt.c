@@ -41,12 +41,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /* Typedefs and macros                                                        */
 /*----------------------------------------------------------------------------*/
 
-//#define TEST_MODE
-#ifdef TEST_MODE
-#define INTERVAL 500
-#else
+#define SIM_INTERVAL 500
 #define INTERVAL 5000
-#endif
 
 /* Battery states */
 typedef enum
@@ -144,9 +140,8 @@ gdk_pixbuf_get_from_surface  (cairo_surface_t *surface,
 
 static int init_measurement (PtBattPlugin *pt)
 {
-#ifdef TEST_MODE
-    return 1;
-#endif
+    if (pt->simulate) return 1;
+
     pt->batt = battery_get (pt->batt_num);
     if (pt->batt) return 1;
 
@@ -157,20 +152,21 @@ static int init_measurement (PtBattPlugin *pt)
 
 static int charge_level (PtBattPlugin *pt, status_t *status, int *tim)
 {
-#ifdef TEST_MODE
-    static int level = 0;
-   *tim = 30;
-    if (level < 100) level +=5;
-    else level = -100;
-    if (level < 0)
+    if (pt->simulate)
     {
-        *status = STAT_DISCHARGING;
-        return (level * -1);
+        static int level = 0;
+       *tim = 30;
+        if (level < 100) level +=5;
+        else level = -100;
+        if (level < 0)
+        {
+            *status = STAT_DISCHARGING;
+            return (level * -1);
+        }
+        else if (level == 100) *status = STAT_EXT_POWER;
+        else *status = STAT_CHARGING;
+        return level;
     }
-    else if (level == 100) *status = STAT_EXT_POWER;
-    else *status = STAT_CHARGING;
-    return level;
-#endif
     *status = STAT_UNKNOWN;
     *tim = 0;
     battery *b = pt->batt;
@@ -341,7 +337,7 @@ void batt_set_num (PtBattPlugin *pt)
 {
     if (pt->timer) g_source_remove (pt->timer);
     if (init_measurement (pt))
-        pt->timer = g_timeout_add (INTERVAL, (GSourceFunc) timer_event, (gpointer) pt);
+        pt->timer = g_timeout_add (pt->simulate ? SIM_INTERVAL : INTERVAL, (GSourceFunc) timer_event, (gpointer) pt);
     else
         pt->timer = 0;
 }
@@ -364,6 +360,9 @@ void batt_init (PtBattPlugin *pt)
     /* Load the symbols */
     pt->plug = gdk_pixbuf_new_from_file (PACKAGE_DATA_DIR "/images/plug.png", NULL);
     pt->flash = gdk_pixbuf_new_from_file (PACKAGE_DATA_DIR "/images/flash.png", NULL);
+
+    if (getenv ("PLUGIN_SIMBAT")) pt->simulate = TRUE;
+    else pt->simulate = FALSE;
 
     /* Start timed events to monitor status */
     batt_set_num (pt);
