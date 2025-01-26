@@ -32,12 +32,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <gtkmm/button.h>
 
 extern "C" {
+#include "lxutils.h"
 #include "batt_sys.h"
 #include "batt.h"
-extern void batt_init (PtBattPlugin *pt);
-extern void batt_update_display (PtBattPlugin *pt);
-extern void batt_set_num (PtBattPlugin *pt);
-extern void batt_destructor (gpointer user_data);
 }
 
 class WayfireBatt : public WayfireWidget

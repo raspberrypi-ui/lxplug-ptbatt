@@ -25,6 +25,10 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/* Typedefs and macros                                                        */
+/*----------------------------------------------------------------------------*/
+
 typedef struct 
 {
 #ifdef LXPLUG
@@ -45,6 +49,15 @@ typedef struct
     int batt_num;
     gboolean simulate;
 } PtBattPlugin;
+
+/*----------------------------------------------------------------------------*/
+/* Prototypes                                                                 */
+/*----------------------------------------------------------------------------*/
+
+extern void batt_init (PtBattPlugin *pt);
+extern void batt_update_display (PtBattPlugin *pt);
+extern void batt_set_num (PtBattPlugin *pt);
+extern void batt_destructor (gpointer user_data);
 
 /* End of file */
 /*----------------------------------------------------------------------------*/
