@@ -1,3 +1,0 @@
-usr/lib/${DEB_HOST_MULTIARCH}/lxpanel/plugins/ptbatt.so
-usr/share/locale/*/LC_MESSAGES/lxplug_ptbatt.mo
-usr/share/lxpanel/images/*.png

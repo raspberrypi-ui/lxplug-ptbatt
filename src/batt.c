@@ -373,7 +373,7 @@ static GtkWidget *ptbatt_configure (LXPanel *panel, GtkWidget *plugin)
         NULL);
 }
 
-FM_DEFINE_MODULE(lxpanel_gtk, ptbatt)
+FM_DEFINE_MODULE(lxpanel_gtk, batt)
 
 /* Plugin descriptor. */
 LXPanelPluginInit fm_module_init_lxpanel_gtk = {

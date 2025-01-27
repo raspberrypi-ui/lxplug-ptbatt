@@ -1,0 +1,3 @@
+usr/lib/${DEB_HOST_MULTIARCH}/lxpanel/plugins/batt.so
+usr/share/locale/*/LC_MESSAGES/lxplug_batt.mo
+usr/share/lxpanel/images/*.png

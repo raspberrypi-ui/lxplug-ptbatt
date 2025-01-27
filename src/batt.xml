@@ -4,7 +4,7 @@
 	<_short>Panel</_short>
 	<group>
 	<_short>Battery</_short>
-	<option name="ptbatt_batt_num" type="int">
+	<option name="batt_batt_num" type="int">
 		<_short>Battery Battery Number</_short>
 		<default>0</default>
 	</option>

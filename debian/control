@@ -1,4 +1,4 @@
-Source: pplug-ptbatt
+Source: pplug-batt
 Section: x11
 Priority: optional
 Maintainer: Simon Long <simon@raspberrypi.com>
@@ -10,14 +10,16 @@ Build-Depends:
 Standards-Version: 4.5.1
 Homepage: http://raspberrypi.com/
 
-Package: lxplug-ptbatt
+Package: lxplug-batt
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
  lxpanel (>= 0.10.1-2+rpt21), lxpanel-data (>= 0.10.1-2+rpt21)
+Conflicts: lxplug-ptbatt
+Replaces: lxplug-ptbatt
 Description: Battery monitor plugin for lxpanel
  Battery indicator plugin for lxpanel.
 
-Package: wfplug-ptbatt
+Package: wfplug-batt
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
   wf-panel-pi (>=0.92)

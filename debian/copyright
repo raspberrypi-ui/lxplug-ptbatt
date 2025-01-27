@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: pplug-ptbatt
-Source: https://github.com/raspberrypi-ui/pplug-ptbatt/
+Upstream-Name: pplug-batt
+Source: https://github.com/raspberrypi-ui/pplug-batt/
 
 Files: *
 Copyright: 2025 Raspberry Pi Holdings Ltd.

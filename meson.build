@@ -1,5 +1,5 @@
 project(
-    'ptbatt',
+    'batt',
     'c',
     'cpp',
     version: '0.8.0',
