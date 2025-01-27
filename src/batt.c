@@ -54,15 +54,13 @@ typedef enum
 } status_t;
 
 /*----------------------------------------------------------------------------*/
-/* Plug-in global data                                                        */
+/* Global data                                                                */
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
 /* Prototypes                                                                 */
 /*----------------------------------------------------------------------------*/
 
-static void convert_alpha (guchar *dest_data, int dest_stride, guchar *src_data, int src_stride, int src_x, int src_y, int width, int height);
-GdkPixbuf *gdk_pixbuf_get_from_surface (cairo_surface_t *surface, gint src_x, gint src_y, gint width, gint height);
 static int init_measurement (PtBattPlugin *pt);
 static int charge_level (PtBattPlugin *pt, status_t *status, int *tim);
 static void draw_icon (PtBattPlugin *pt, int lev, float r, float g, float b, int powered);
@@ -72,69 +70,6 @@ static gboolean timer_event (PtBattPlugin *pt);
 /*----------------------------------------------------------------------------*/
 /* Function definitions                                                       */
 /*----------------------------------------------------------------------------*/
-
-/* gdk_pixbuf_get_from_surface function from GDK+3 */
-
-static void
-convert_alpha (guchar *dest_data,
-               int     dest_stride,
-               guchar *src_data,
-               int     src_stride,
-               int     src_x,
-               int     src_y,
-               int     width,
-               int     height)
-{
-  int x, y;
-
-  src_data += src_stride * src_y + src_x * 4;
-
-  for (y = 0; y < height; y++) {
-    guint32 *src = (guint32 *) src_data;
-
-    for (x = 0; x < width; x++) {
-      guint alpha = src[x] >> 24;
-
-      if (alpha == 0)
-        {
-          dest_data[x * 4 + 0] = 0;
-          dest_data[x * 4 + 1] = 0;
-          dest_data[x * 4 + 2] = 0;
-        }
-      else
-        {
-          dest_data[x * 4 + 0] = (((src[x] & 0xff0000) >> 16) * 255 + alpha / 2) / alpha;
-          dest_data[x * 4 + 1] = (((src[x] & 0x00ff00) >>  8) * 255 + alpha / 2) / alpha;
-          dest_data[x * 4 + 2] = (((src[x] & 0x0000ff) >>  0) * 255 + alpha / 2) / alpha;
-        }
-      dest_data[x * 4 + 3] = alpha;
-    }
-
-    src_data += src_stride;
-    dest_data += dest_stride;
-  }
-}
-
-GdkPixbuf *
-gdk_pixbuf_get_from_surface  (cairo_surface_t *surface,
-                              gint             ,
-                              gint             ,
-                              gint             width,
-                              gint             height)
-{
-  GdkPixbuf *dest = gdk_pixbuf_new (GDK_COLORSPACE_RGB, TRUE, 8, width, height);
-
-  convert_alpha (gdk_pixbuf_get_pixels (dest),
-                   gdk_pixbuf_get_rowstride (dest),
-                   cairo_image_surface_get_data (surface),
-                   cairo_image_surface_get_stride (surface),
-                   0, 0,
-                   width, height);
-
-  cairo_surface_destroy (surface);
-  return dest;
-}
-
 
 /* Initialise measurements and check for a battery */
 

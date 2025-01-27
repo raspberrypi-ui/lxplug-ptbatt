@@ -31,6 +31,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 typedef struct 
 {
+    GtkWidget *plugin;
+
 #ifdef LXPLUG
     LXPanel *panel;                 /* Back pointer to panel */
     config_setting_t *settings;     /* Plugin settings */
@@ -39,7 +41,7 @@ typedef struct
     gboolean bottom;
     GtkGesture *gesture;
 #endif
-    GtkWidget *plugin;              /* Back pointer to the widget */
+
     GtkWidget *tray_icon;           /* Displayed image */
     battery *batt;
     GdkPixbuf *plug;
