@@ -287,11 +287,6 @@ void batt_init (PtBattPlugin *pt)
     pt->tray_icon = gtk_image_new ();
     gtk_container_add (GTK_CONTAINER (pt->plugin), pt->tray_icon);
 
-#ifndef LXPLUG
-    /* Set up long press */
-    pt->gesture = add_long_press (pt->plugin, NULL, NULL);
-#endif
-
     /* Load the symbols */
     pt->plug = gdk_pixbuf_new_from_file (PACKAGE_DATA_DIR "/images/plug.png", NULL);
     pt->flash = gdk_pixbuf_new_from_file (PACKAGE_DATA_DIR "/images/flash.png", NULL);
@@ -312,10 +307,6 @@ void batt_destructor (gpointer user_data)
 
     /* Disconnect the timer */
     if (pt->timer) g_source_remove (pt->timer);
-
-#ifndef LXPLUG
-    if (pt->gesture) g_object_unref (pt->gesture);
-#endif
 
     g_free (pt);
 }

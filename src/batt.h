@@ -39,7 +39,6 @@ typedef struct
 #else
     int icon_size;                  /* Variables used under wf-panel */
     gboolean bottom;
-    GtkGesture *gesture;
 #endif
 
     GtkWidget *tray_icon;           /* Displayed image */
