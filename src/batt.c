@@ -57,6 +57,11 @@ typedef enum
 /* Global data                                                                */
 /*----------------------------------------------------------------------------*/
 
+conf_table_t conf_table[2] = {
+    {CONF_TYPE_INT,  "batt_num", N_("Battery number to monitor"),   NULL},
+    {CONF_TYPE_NONE, NULL,       NULL,                              NULL}
+};
+
 /*----------------------------------------------------------------------------*/
 /* Prototypes                                                                 */
 /*----------------------------------------------------------------------------*/
@@ -328,8 +333,12 @@ static GtkWidget *ptbatt_constructor (LXPanel *panel, config_setting_t *settings
     pt->plugin = gtk_event_box_new ();
     lxpanel_plugin_set_data (pt->plugin, pt, batt_destructor);
 
+    /* Set config defaults */
+    pt->batt_num = 0;
+
     /* Read config */
-    if (!config_setting_lookup_int (pt->settings, "BattNum", &pt->batt_num)) pt->batt_num = 0;
+    conf_table[0].value = (void *) &pt->batt_num;
+    lxplug_read_settings (pt->settings, conf_table);
 
     batt_init (pt);
     return pt->plugin;
@@ -347,7 +356,7 @@ static gboolean ptbatt_apply_configuration (gpointer user_data)
 {
     PtBattPlugin *pt = lxpanel_plugin_get_data (GTK_WIDGET (user_data));
 
-    config_group_set_int (pt->settings, "BattNum", pt->batt_num);
+    lxplug_write_settings (pt->settings, conf_table);
 
     batt_set_num (pt);
     return FALSE;
@@ -356,19 +365,16 @@ static gboolean ptbatt_apply_configuration (gpointer user_data)
 /* Display configuration dialog */
 static GtkWidget *ptbatt_configure (LXPanel *panel, GtkWidget *plugin)
 {
-    PtBattPlugin *pt = lxpanel_plugin_get_data (plugin);
-
-    return lxpanel_generic_config_dlg(_("Battery"), panel,
+    return lxpanel_generic_config_dlg_new (_(PLUGIN_TITLE), panel,
         ptbatt_apply_configuration, plugin,
-        _("Battery number to monitor"), &pt->batt_num, CONF_TYPE_INT,
-        NULL);
+        conf_table);
 }
 
 FM_DEFINE_MODULE(lxpanel_gtk, batt)
 
 /* Plugin descriptor. */
 LXPanelPluginInit fm_module_init_lxpanel_gtk = {
-    .name = N_("Battery"),
+    .name = N_(PLUGIN_TITLE),
     .description = N_("Monitors laptop battery"),
     .new_instance = ptbatt_constructor,
     .reconfigure = ptbatt_configuration_changed,

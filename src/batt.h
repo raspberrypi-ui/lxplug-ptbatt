@@ -29,6 +29,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /* Typedefs and macros                                                        */
 /*----------------------------------------------------------------------------*/
 
+#define PLUGIN_TITLE "Battery"
+
 typedef struct 
 {
     GtkWidget *plugin;
@@ -38,7 +40,6 @@ typedef struct
     config_setting_t *settings;     /* Plugin settings */
 #else
     int icon_size;                  /* Variables used under wf-panel */
-    gboolean bottom;
 #endif
 
     GtkWidget *tray_icon;           /* Displayed image */
@@ -50,6 +51,8 @@ typedef struct
     int batt_num;
     gboolean simulate;
 } PtBattPlugin;
+
+extern conf_table_t conf_table[2];
 
 /*----------------------------------------------------------------------------*/
 /* Prototypes                                                                 */

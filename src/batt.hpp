@@ -44,7 +44,6 @@ class WayfireBatt : public WayfireWidget
     Glib::RefPtr<Gtk::GestureLongPress> gesture;
 
     WfOption <int> icon_size {"panel/icon_size"};
-    WfOption <std::string> bar_pos {"panel/position"};
     sigc::connection icon_timer;
 
     WfOption <int> batt_num {"panel/batt_batt_num"};
@@ -57,7 +56,6 @@ class WayfireBatt : public WayfireWidget
     void init (Gtk::HBox *container) override;
     virtual ~WayfireBatt ();
     void icon_size_changed_cb (void);
-    void bar_pos_changed_cb (void);
     bool set_icon (void);
     void settings_changed_cb (void);
 };
