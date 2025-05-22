@@ -216,7 +216,11 @@ static void update_icon (PtBattPlugin *pt)
     float ftime;
     char str[255];
 
-    if (!pt->timer) return;
+    if (!pt->timer)
+    {
+        gtk_widget_hide (pt->plugin);
+        return;
+    }
 
     // read the charge status
     capacity = charge_level (pt, &status, &time);
@@ -253,6 +257,7 @@ static void update_icon (PtBattPlugin *pt)
 
     // set the tooltip
     gtk_widget_set_tooltip_text (pt->tray_icon, str);
+    gtk_widget_show_all (pt->plugin);
 }
 
 static gboolean timer_event (PtBattPlugin *pt)
@@ -268,8 +273,7 @@ static gboolean timer_event (PtBattPlugin *pt)
 /* Handler for system config changed message from panel */
 void batt_update_display (PtBattPlugin *pt)
 {
-    if (pt->timer) update_icon (pt);
-    else gtk_widget_hide (pt->plugin);
+    update_icon (pt);
 }
 
 /* Handler for battery number update from variable watcher */
@@ -277,9 +281,11 @@ void batt_set_num (PtBattPlugin *pt)
 {
     if (pt->timer) g_source_remove (pt->timer);
     if (init_measurement (pt))
+    {
         pt->timer = g_timeout_add (pt->simulate ? SIM_INTERVAL : INTERVAL, (GSourceFunc) timer_event, (gpointer) pt);
-    else
-        pt->timer = 0;
+        update_icon (pt);
+    }
+    else pt->timer = 0;
 }
 
 void batt_init (PtBattPlugin *pt)
@@ -301,9 +307,6 @@ void batt_init (PtBattPlugin *pt)
 
     /* Start timed events to monitor status */
     batt_set_num (pt);
-
-    /* Show the widget and return */
-    gtk_widget_show_all (pt->plugin);
 }
 
 void batt_destructor (gpointer user_data)

@@ -38,21 +38,20 @@ extern "C" {
     const char *package_name (void) { return GETTEXT_PACKAGE; };
 }
 
-void WayfireBatt::icon_size_changed_cb (void)
-{
-    pt->icon_size = icon_size;
-    batt_update_display (pt);
-}
-
 bool WayfireBatt::set_icon (void)
 {
     batt_update_display (pt);
     return false;
 }
 
-void WayfireBatt::settings_changed_cb (void)
+void WayfireBatt::read_settings (void)
 {
     pt->batt_num = batt_num;
+}
+
+void WayfireBatt::settings_changed_cb (void)
+{
+    read_settings ();
     batt_set_num (pt);
 }
 
@@ -66,20 +65,16 @@ void WayfireBatt::init (Gtk::HBox *container)
     /* Setup structure */
     pt = g_new0 (PtBattPlugin, 1);
     pt->plugin = (GtkWidget *)((*plugin).gobj());
-    pt->icon_size = icon_size;
     icon_timer = Glib::signal_idle().connect (sigc::mem_fun (*this, &WayfireBatt::set_icon));
 
     /* Add long press for right click */
     gesture = add_longpress_default (*plugin);
 
-    pt->batt_num = batt_num;
-
     /* Initialise the plugin */
+    read_settings ();
     batt_init (pt);
 
     /* Setup callbacks */
-    icon_size.set_callback (sigc::mem_fun (*this, &WayfireBatt::icon_size_changed_cb));
-
     batt_num.set_callback (sigc::mem_fun (*this, &WayfireBatt::settings_changed_cb));
 }
 
