@@ -29,7 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /* Typedefs and macros                                                        */
 /*----------------------------------------------------------------------------*/
 
-#define PLUGIN_TITLE "Battery"
+#define PLUGIN_TITLE N_("Battery")
 
 typedef struct 
 {

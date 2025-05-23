@@ -1,14 +1,14 @@
-# English translations for wf-panel-pi package.
-# Copyright (C) 2024 Raspberry Pi Ltd
+# English translations for plugin package.
+# Copyright (C) 2025 Raspberry Pi
 # This file is distributed under the same license as the wf-panel-pi package.
-# Simon Long <simon@raspberrypi.com>, 2024.
+# Simon Long <simon@raspberrypi.com>, 2025.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-01-20 07:53+0000\n"
-"PO-Revision-Date: 2017-03-06 14:18+0000\n"
+"POT-Creation-Date: 2025-05-23 10:36+0100\n"
+"PO-Revision-Date: 2025-05-23 10:36+0100\n"
 "Last-Translator: Simon Long <simon@raspberrypi.com>\n"
 "Language-Team: English (British)\n"
 "Language: en_GB\n"
@@ -17,12 +17,16 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../src/batt.c:302
+#: ../src/batt.c:61
+msgid "Battery number to monitor"
+msgstr "Battery Number to Monitor"
+
+#: ../src/batt.c:234
 #, c-format
 msgid "Charging : %d%%"
 msgstr "Charging : %d%%"
 
-#: ../src/batt.c:304
+#: ../src/batt.c:236
 #, c-format
 msgid ""
 "Charging : %d%%\n"
@@ -31,7 +35,7 @@ msgstr ""
 "Charging : %d%%\n"
 "Time remaining : %d minutes"
 
-#: ../src/batt.c:306
+#: ../src/batt.c:238
 #, c-format
 msgid ""
 "Charging : %d%%\n"
@@ -40,7 +44,7 @@ msgstr ""
 "Charging : %d%%\n"
 "Time remaining : %0.1f hours"
 
-#: ../src/batt.c:311
+#: ../src/batt.c:243
 #, c-format
 msgid ""
 "Charged : %d%%\n"
@@ -49,12 +53,12 @@ msgstr ""
 "Charged : %d%%\n"
 "On external power"
 
-#: ../src/batt.c:317
+#: ../src/batt.c:249
 #, c-format
 msgid "Discharging : %d%%"
 msgstr "Discharging : %d%%"
 
-#: ../src/batt.c:319
+#: ../src/batt.c:251
 #, c-format
 msgid ""
 "Discharging : %d%%\n"
@@ -63,7 +67,7 @@ msgstr ""
 "Discharging : %d%%\n"
 "Time remaining : %d minutes"
 
-#: ../src/batt.c:321
+#: ../src/batt.c:253
 #, c-format
 msgid ""
 "Discharging : %d%%\n"
@@ -72,15 +76,10 @@ msgstr ""
 "Discharging : %d%%\n"
 "Time remaining : %0.1f hours"
 
-#: ../src/batt.c:436 ../src/batt.c:446 ../src/batt.cpp:40
+#: ../src/batt.c:382
+msgid "Monitors laptop battery"
+msgstr "Monitors laptop battery"
+
+#: ../src/batt.h:32
 msgid "Battery"
 msgstr "Battery"
-
-#: ../src/batt.c:438 ../src/batt.cpp:36
-msgid "Battery number to monitor"
-msgstr "Battery number to monitor"
-
-#: ../src/batt.c:447
-#, fuzzy
-msgid "Monitors laptop battery"
-msgstr "Monitors voltage and laptop battery"
