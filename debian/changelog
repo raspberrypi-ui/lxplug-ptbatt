@@ -1,3 +1,9 @@
+pplug-batt (0.24) trixie; urgency=medium
+
+  * Modify for lxpanel-pi
+
+ -- Simon Long <simon@raspberrypi.com>  Tue, 27 May 2025 07:31:23 +0100
+
 pplug-batt (0.23) bookworm; urgency=medium
 
   * First hybrid package version
