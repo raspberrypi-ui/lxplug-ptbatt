@@ -1,4 +1,4 @@
-pplug-batt (0.24) trixie; urgency=medium
+pplug-batt (1.0) trixie; urgency=medium
 
   * Modify for lxpanel-pi
 
