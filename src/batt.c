@@ -373,7 +373,7 @@ static GtkWidget *ptbatt_configure (LXPanel *panel, GtkWidget *plugin)
         conf_table);
 }
 
-int module_lxpanel_gtk_version = __FM_DEFINE_VERSION__(lxpanel_gtk);
+int module_lxpanel_gtk_version = 1;
 char module_name[] = PLUGIN_NAME;
 
 /* Plugin descriptor. */
