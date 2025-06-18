@@ -10,14 +10,14 @@ Build-Depends:
 Standards-Version: 4.5.1
 Homepage: http://raspberrypi.com/
 
-Package: lxplug-batt
+Package: lpplug-batt
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
  lxpanel-pi
 Conflicts: lxplug-ptbatt
 Replaces: lxplug-ptbatt
-Description: Battery monitor plugin for lxpanel
- Battery indicator plugin for lxpanel.
+Description: Battery monitor plugin for lxpanel-pi
+ Battery indicator plugin for lxpanel-pi.
 
 Package: wfplug-batt
 Architecture: any
