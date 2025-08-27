@@ -1,0 +1,87 @@
+# English translations for wf-panel-pi package.
+# Copyright (C) 2024 Raspberry Pi Ltd
+# This file is distributed under the same license as the wf-panel-pi package.
+# Simon Long <simon@raspberrypi.com>, 2024.
+# ykla <yklaxds@gmail.com>, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-01-20 07:53+0000\n"
+"PO-Revision-Date: 2025-08-23 14:19+0800\n"
+"Last-Translator: ykla <yklaxds@gmail.com>\n"
+"Language-Team: ykla <yklaxds@gmail.com>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Poedit 3.7\n"
+
+#: ../src/batt.c:302
+#, c-format
+msgid "Charging : %d%%"
+msgstr "充电中 : %d%%"
+
+#: ../src/batt.c:304
+#, c-format
+msgid ""
+"Charging : %d%%\n"
+"Time remaining : %d minutes"
+msgstr ""
+"充电中 : %d%%\n"
+"还需 : %d 分钟"
+
+#: ../src/batt.c:306
+#, c-format
+msgid ""
+"Charging : %d%%\n"
+"Time remaining : %0.1f hours"
+msgstr ""
+"充电中 : %d%%\n"
+"还需 : %0.1f 小时"
+
+#: ../src/batt.c:311
+#, c-format
+msgid ""
+"Charged : %d%%\n"
+"On external power"
+msgstr ""
+"已充电 : %d%%\n"
+"已接入外部电源"
+
+#: ../src/batt.c:317
+#, c-format
+msgid "Discharging : %d%%"
+msgstr "正在使用电池 : %d%%"
+
+#: ../src/batt.c:319
+#, c-format
+msgid ""
+"Discharging : %d%%\n"
+"Time remaining : %d minutes"
+msgstr ""
+"正在使用电池 : %d%%\n"
+"剩余时间 : %d 分钟"
+
+#: ../src/batt.c:321
+#, c-format
+msgid ""
+"Discharging : %d%%\n"
+"Time remaining : %0.1f hours"
+msgstr ""
+"正在使用电池 : %d%%\n"
+"剩余时间 : %0.1f 小时"
+
+#: ../src/batt.c:436 ../src/batt.c:446 ../src/batt.cpp:40
+msgid "Battery"
+msgstr "电池"
+
+#: ../src/batt.c:438 ../src/batt.cpp:36
+msgid "Battery number to monitor"
+msgstr "要监控的电池编号"
+
+#: ../src/batt.c:447
+msgid "Monitors laptop battery"
+msgstr "监控笔记本电池"
